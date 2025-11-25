@@ -1,5 +1,6 @@
 import sys
 import os
+import subprocess
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QListWidget, QPushButton,
     QFileDialog, QMessageBox, QHBoxLayout
@@ -12,19 +13,19 @@ class PDFMergerApp(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("PDF Merger (PyQt6)")
+        self.setWindowTitle("PDF Merger (External Viewer)")
         self.setMinimumSize(600, 400)
         self.setAcceptDrops(True)
 
-        layout = QVBoxLayout()
+        main_layout = QVBoxLayout()
 
-        # List view for PDF files
+        # --- PDF File List ---
         self.list_widget = QListWidget()
         self.list_widget.setSelectionMode(
             self.list_widget.SelectionMode.ExtendedSelection)
-        layout.addWidget(self.list_widget)
+        main_layout.addWidget(self.list_widget)
 
-        # Buttons
+        # --- Buttons ---
         btn_layout = QHBoxLayout()
 
         add_btn = QPushButton("Add PDFs")
@@ -47,10 +48,11 @@ class PDFMergerApp(QWidget):
         merge_btn.clicked.connect(self.merge_pdfs)
         btn_layout.addWidget(merge_btn)
 
-        layout.addLayout(btn_layout)
-        self.setLayout(layout)
+        main_layout.addLayout(btn_layout)
 
-    # Drag & Drop support
+        self.setLayout(main_layout)
+
+    # --- Drag & Drop ---
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
@@ -64,36 +66,33 @@ class PDFMergerApp(QWidget):
                 QMessageBox.warning(self, "Invalid File",
                                     f"Not a PDF: {path}")
 
-    # Add files
+    # --- File list actions ---
     def add_pdfs(self):
         files, _ = QFileDialog.getOpenFileNames(
             self, "Select PDF Files", "", "PDF Files (*.pdf)")
         for f in files:
             self.list_widget.addItem(f)
 
-    # Remove files
     def remove_selected(self):
         for item in self.list_widget.selectedItems():
             row = self.list_widget.row(item)
             self.list_widget.takeItem(row)
 
-    # Move selected item up
     def move_up(self):
-        current_row = self.list_widget.currentRow()
-        if current_row > 0:
-            item = self.list_widget.takeItem(current_row)
-            self.list_widget.insertItem(current_row - 1, item)
-            self.list_widget.setCurrentRow(current_row - 1)
+        row = self.list_widget.currentRow()
+        if row > 0:
+            item = self.list_widget.takeItem(row)
+            self.list_widget.insertItem(row - 1, item)
+            self.list_widget.setCurrentRow(row - 1)
 
-    # Move selected item down
     def move_down(self):
-        current_row = self.list_widget.currentRow()
-        if current_row < self.list_widget.count() - 1:
-            item = self.list_widget.takeItem(current_row)
-            self.list_widget.insertItem(current_row + 1, item)
-            self.list_widget.setCurrentRow(current_row + 1)
+        row = self.list_widget.currentRow()
+        if row < self.list_widget.count() - 1:
+            item = self.list_widget.takeItem(row)
+            self.list_widget.insertItem(row + 1, item)
+            self.list_widget.setCurrentRow(row + 1)
 
-    # Merge PDFs
+    # --- Merge PDFs ---
     def merge_pdfs(self):
         pdf_paths = [self.list_widget.item(i).text()
                      for i in range(self.list_widget.count())]
@@ -115,11 +114,28 @@ class PDFMergerApp(QWidget):
             merger.write(output_file)
             merger.close()
 
-            QMessageBox.information(self, "Success",
-                                    f"Merged PDF saved:\n{output_file}")
+            # --- Launch external PDF viewer ---
+            self.open_pdf_external(output_file)
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error merging PDFs:\n{e}")
+
+    def open_pdf_external(self, pdf_path):
+        if not os.path.exists(pdf_path):
+            return
+
+        try:
+            if sys.platform.startswith("darwin"):  # macOS
+                subprocess.run(["open", pdf_path])
+            elif os.name == "nt":  # Windows
+                os.startfile(pdf_path)
+            elif os.name == "posix":  # Linux / Unix
+                subprocess.run(["xdg-open", pdf_path])
+            else:
+                QMessageBox.information(self, "Notice",
+                                        f"Cannot automatically open PDF on this OS: {pdf_path}")
+        except Exception as e:
+            QMessageBox.warning(self, "Error", f"Failed to open PDF:\n{e}")
 
 
 if __name__ == "__main__":
