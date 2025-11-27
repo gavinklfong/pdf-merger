@@ -13,7 +13,7 @@ class PDFMergerApp(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("PDF Merger (External Viewer)")
+        self.setWindowTitle("PDF Merger")
         self.setMinimumSize(600, 400)
         self.setAcceptDrops(True)
 
