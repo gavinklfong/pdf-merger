@@ -2,77 +2,46 @@ import sys
 import os
 import subprocess
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QVBoxLayout, QListWidget, QListWidgetItem,
-    QPushButton, QFileDialog, QMessageBox, QHBoxLayout, QLabel
+    QApplication, QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem,
+    QPushButton, QFileDialog, QMessageBox, QHBoxLayout, QAbstractItemView, QWidget
 )
-from PyQt6.QtCore import QSize, Qt
+from PyQt6.QtCore import Qt
 from PyPDF2 import PdfMerger
-
-
-class PDFListItem(QWidget):
-    """Custom row widget containing filename + View + Remove buttons."""
-    def __init__(self, pdf_path, parent_list):
-        super().__init__()
-        self.pdf_path = pdf_path
-        self.parent_list = parent_list
-
-        layout = QHBoxLayout()
-        layout.setContentsMargins(5, 2, 5, 2)
-
-        self.label = QLabel(os.path.basename(pdf_path))
-        layout.addWidget(self.label)
-
-        view_btn = QPushButton("View")
-        view_btn.clicked.connect(self.open_pdf)
-        view_btn.setFixedWidth(80)
-        layout.addWidget(view_btn)
-
-        remove_btn = QPushButton("Remove")
-        remove_btn.clicked.connect(self.remove_self)
-        remove_btn.setFixedWidth(80)
-        layout.addWidget(remove_btn)
-
-        self.setLayout(layout)
-
-    def open_pdf(self):
-        """Open PDF using the OS's default PDF viewer."""
-        try:
-            if sys.platform.startswith("darwin"):
-                subprocess.run(["open", self.pdf_path])
-            elif os.name == "nt":
-                os.startfile(self.pdf_path)
-            elif os.name == "posix":
-                subprocess.run(["xdg-open", self.pdf_path])
-        except Exception as e:
-            QMessageBox.critical(self, "Open Error", str(e))
-
-    def remove_self(self):
-        """Remove the list item from the QListWidget."""
-        for i in range(self.parent_list.count()):
-            item = self.parent_list.item(i)
-            if self.parent_list.itemWidget(item) is self:
-                self.parent_list.takeItem(i)
-                break
 
 
 class PDFMergerApp(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("PDF Merger (PyQt6)")
-        self.setMinimumSize(650, 450)
+        self.setWindowTitle("PDF Merger (Table Version)")
+        self.setMinimumSize(750, 500)
         self.setAcceptDrops(True)
 
-        main_layout = QVBoxLayout()
+        layout = QVBoxLayout()
 
-        # QListWidget for holding PDF entries
-        self.list_widget = QListWidget()
-        self.list_widget.setDragDropMode(
-            QListWidget.DragDropMode.InternalMove
-        )
-        main_layout.addWidget(self.list_widget)
+        # Table with 2 columns ("File", "Actions")
+        self.table = QTableWidget(0, 2)
+        self.table.setHorizontalHeaderLabels(["File", "Actions"])
 
-        # Buttons Layout
+        # Expand the File column, keep Actions compact
+        self.table.horizontalHeader().setStretchLastSection(False)
+        self.table.horizontalHeader().setSectionResizeMode(0,
+            self.table.horizontalHeader().ResizeMode.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(1,
+            self.table.horizontalHeader().ResizeMode.ResizeToContents)
+
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.table.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
+        self.table.setDragEnabled(True)
+        self.table.setDropIndicatorShown(True)
+
+        # Set table row height
+        self.table.verticalHeader().setDefaultSectionSize(40)
+
+        layout.addWidget(self.table)
+
+        # Buttons layout
         btn_layout = QHBoxLayout()
 
         add_btn = QPushButton("Add PDFs")
@@ -83,25 +52,44 @@ class PDFMergerApp(QWidget):
         merge_btn.clicked.connect(self.merge_pdfs)
         btn_layout.addWidget(merge_btn)
 
-        main_layout.addLayout(btn_layout)
-        self.setLayout(main_layout)
+        layout.addLayout(btn_layout)
+        self.setLayout(layout)
 
-    # ----------------------------------------
-    # Add rows
-    # ----------------------------------------
+    # ---------------------------------------------------------
+    # Add a new row
+    # ---------------------------------------------------------
     def add_pdf_row(self, path):
         if not os.path.isfile(path):
             QMessageBox.warning(self, "File Missing", f"File not found:\n{path}")
             return
 
-        item = QListWidgetItem()
-        item.setSizeHint(QSize(300, 40))
+        row = self.table.rowCount()
+        self.table.insertRow(row)
 
-        widget = PDFListItem(path, self.list_widget)
+        # Column 1: full path
+        file_item = QTableWidgetItem(path)
+        file_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+        self.table.setItem(row, 0, file_item)
 
-        self.list_widget.addItem(item)
-        self.list_widget.setItemWidget(item, widget)
+        # Column 2: actions (View / Remove)
+        action_layout = QHBoxLayout()
+        action_layout.setContentsMargins(5, 0, 5, 0)
 
+        view_btn = QPushButton("View")
+        # view by path stored in the file cell (keeps it correct after reorder)
+        view_btn.clicked.connect(self._on_view_clicked)
+        action_layout.addWidget(view_btn)
+
+        remove_btn = QPushButton("Remove")
+        # remove uses sender to find which row to delete
+        remove_btn.clicked.connect(self._on_remove_clicked)
+        action_layout.addWidget(remove_btn)
+
+        action_widget = QWidget()
+        action_widget.setLayout(action_layout)
+        self.table.setCellWidget(row, 1, action_widget)
+
+    # ---------------------------------------------------------
     def add_pdfs(self):
         files, _ = QFileDialog.getOpenFileNames(
             self, "Select PDF Files", "", "PDF Files (*.pdf)"
@@ -109,9 +97,9 @@ class PDFMergerApp(QWidget):
         for f in files:
             self.add_pdf_row(f)
 
-    # ----------------------------------------
-    # Drag & Drop
-    # ----------------------------------------
+    # ---------------------------------------------------------
+    # Drag & Drop support
+    # ---------------------------------------------------------
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
             event.acceptProposedAction()
@@ -124,19 +112,56 @@ class PDFMergerApp(QWidget):
             else:
                 QMessageBox.warning(self, "Invalid File", f"Not a PDF:\n{path}")
 
-    # ----------------------------------------
+    # ---------------------------------------------------------
+    # Remove handler (find row dynamically)
+    # ---------------------------------------------------------
+    def _on_remove_clicked(self):
+        sender = self.sender()  # the QPushButton
+        if sender is None:
+            return
+
+        parent_widget = sender.parent()  # the QWidget that was set as cell widget
+        if parent_widget is None:
+            return
+
+        # find which row has this cell widget
+        for row in range(self.table.rowCount()):
+            if self.table.cellWidget(row, 1) is parent_widget:
+                self.table.removeRow(row)
+                return
+
+    # ---------------------------------------------------------
+    # View handler (open file from the File column of the row)
+    # ---------------------------------------------------------
+    def _on_view_clicked(self):
+        sender = self.sender()
+        if sender is None:
+            return
+
+        parent_widget = sender.parent()
+        if parent_widget is None:
+            return
+
+        for row in range(self.table.rowCount()):
+            if self.table.cellWidget(row, 1) is parent_widget:
+                item = self.table.item(row, 0)
+                if item:
+                    path = item.text()
+                    self.open_pdf(path)
+                return
+
+    # ---------------------------------------------------------
     # Merge PDFs
-    # ----------------------------------------
+    # ---------------------------------------------------------
     def merge_pdfs(self):
         pdf_paths = []
-
-        for i in range(self.list_widget.count()):
-            item = self.list_widget.item(i)
-            row_widget = self.list_widget.itemWidget(item)
-            pdf_paths.append(row_widget.pdf_path)
+        for row in range(self.table.rowCount()):
+            item = self.table.item(row, 0)
+            if item:
+                pdf_paths.append(item.text())
 
         if not pdf_paths:
-            QMessageBox.warning(self, "No Files", "Add PDFs before merging.")
+            QMessageBox.warning(self, "No Files", "No PDFs added.")
             return
 
         output_file, _ = QFileDialog.getSaveFileName(
@@ -153,23 +178,25 @@ class PDFMergerApp(QWidget):
             merger.close()
 
             QMessageBox.information(
-                self, "Success", f"Merged PDF saved to:\n{output_file}"
+                self, "Success", f"Merged PDF saved:\n{output_file}"
             )
 
-            self.open_pdf_external(output_file)
+            self.open_pdf(output_file)
 
         except Exception as e:
-            QMessageBox.critical(self, "Merge Error", str(e))
+            QMessageBox.critical(self, "Error", f"Error merging PDFs:\n{e}")
 
-    def open_pdf_external(self, pdf_path):
-        """Open merged PDF in external viewer."""
+    # ---------------------------------------------------------
+    # External PDF viewer
+    # ---------------------------------------------------------
+    def open_pdf(self, path):
         try:
             if sys.platform.startswith("darwin"):
-                subprocess.run(["open", pdf_path])
+                subprocess.run(["open", path])
             elif os.name == "nt":
-                os.startfile(pdf_path)
+                os.startfile(path)
             elif os.name == "posix":
-                subprocess.run(["xdg-open", pdf_path])
+                subprocess.run(["xdg-open", path])
         except Exception as e:
             QMessageBox.critical(self, "Open Error", str(e))
 
