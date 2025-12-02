@@ -75,6 +75,14 @@ class PDFMergerApp(QWidget):
         action_layout = QHBoxLayout()
         action_layout.setContentsMargins(5, 0, 5, 0)
 
+        up_btn = QPushButton("Up")
+        up_btn.clicked.connect(self._on_up_clicked)
+        action_layout.addWidget(up_btn)
+
+        down_btn = QPushButton("Down")
+        down_btn.clicked.connect(self._on_down_clicked)
+        action_layout.addWidget(down_btn)
+
         view_btn = QPushButton("View")
         # view by path stored in the file cell (keeps it correct after reorder)
         view_btn.clicked.connect(self._on_view_clicked)
@@ -129,6 +137,56 @@ class PDFMergerApp(QWidget):
             if self.table.cellWidget(row, 1) is parent_widget:
                 self.table.removeRow(row)
                 return
+            
+    # ---------------------------------------------------------
+    # Swap up position handler (find row dynamically)
+    # ---------------------------------------------------------
+    def _on_up_clicked(self):
+        sender = self.sender()  # the QPushButton
+        if sender is None:
+            return
+
+        parent_widget = sender.parent()  # the QWidget that was set as cell widget
+        if parent_widget is None:
+            return
+
+        # find which row has this cell widget
+        current_row = -1
+        for row in range(self.table.rowCount()):
+            if self.table.cellWidget(row, 1) is parent_widget:
+                current_row = row
+                break
+        
+        if current_row > 0:
+            previous_row = current_row - 1
+            current_path = self.table.item(current_row, 0).text()
+            previous_path = self.table.item(previous_row, 0).text()
+            self.table.item(current_row, 0).setText(previous_path)
+            self.table.item(previous_row, 0).setText(current_path)
+
+
+    def _on_down_clicked(self):
+        sender = self.sender()  # the QPushButton
+        if sender is None:
+            return
+
+        parent_widget = sender.parent()  # the QWidget that was set as cell widget
+        if parent_widget is None:
+            return
+
+        # find which row has this cell widget
+        current_row = -1
+        for row in range(self.table.rowCount()):
+            if self.table.cellWidget(row, 1) is parent_widget:
+                current_row = row
+                break
+        
+        if current_row < self.table.rowCount() - 1:
+            next_row = current_row + 1
+            current_path = self.table.item(current_row, 0).text()
+            next_path = self.table.item(next_row, 0).text()
+            self.table.item(current_row, 0).setText(next_path)
+            self.table.item(next_row, 0).setText(current_path)
 
     # ---------------------------------------------------------
     # View handler (open file from the File column of the row)
