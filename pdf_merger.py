@@ -52,6 +52,10 @@ class PDFMergerApp(QWidget):
         merge_btn.clicked.connect(self.merge_pdfs)
         btn_layout.addWidget(merge_btn)
 
+        remove_all_btn = QPushButton("Remove All PDFs")
+        remove_all_btn.clicked.connect(self.remove_all_pdfs)
+        btn_layout.addWidget(remove_all_btn)
+
         layout.addLayout(btn_layout)
         self.setLayout(layout)
 
@@ -104,6 +108,10 @@ class PDFMergerApp(QWidget):
         )
         for f in files:
             self.add_pdf_row(f)
+
+
+    def remove_all_pdfs(self):
+        self.table.setRowCount(0)
 
     # ---------------------------------------------------------
     # Drag & Drop support
