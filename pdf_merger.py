@@ -14,7 +14,7 @@ class PDFMergerApp(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("PDF Merger (Table Version)")
+        self.setWindowTitle("PDF Merger")
         self.setMinimumSize(750, 500)
         self.setAcceptDrops(True)
 
@@ -301,10 +301,6 @@ class PDFMergerApp(QWidget):
                     os.remove(tmp)
                 except:
                     pass
-
-            QMessageBox.information(
-                self, "Success", f"Merged PDF saved:\n{output_file}"
-            )
 
             self.open_pdf(output_file)
 
