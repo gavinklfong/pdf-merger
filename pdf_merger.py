@@ -1,13 +1,14 @@
 import sys
 import os
 import subprocess
+import tempfile
+import img2pdf
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem,
     QPushButton, QFileDialog, QMessageBox, QHBoxLayout, QAbstractItemView, QWidget
 )
 from PyQt6.QtCore import Qt
 from PyPDF2 import PdfMerger
-
 
 class PDFMergerApp(QWidget):
     def __init__(self):
@@ -227,15 +228,19 @@ class PDFMergerApp(QWidget):
     # ---------------------------------------------------------
     def merge_pdfs(self):
         pdf_paths = []
+        temp_files = []  # to track temporary converted PDFs
+
+        # Collect file paths from the table
         for row in range(self.table.rowCount()):
             item = self.table.item(row, 0)
             if item:
                 pdf_paths.append(item.data(Qt.ItemDataRole.UserRole))
 
         if not pdf_paths:
-            QMessageBox.warning(self, "No Files", "No PDFs added.")
+            QMessageBox.warning(self, "No Files", "No files added.")
             return
 
+        # Ask user where to save the merged PDF
         output_file, _ = QFileDialog.getSaveFileName(
             self, "Save Merged PDF", "merged.pdf", "PDF Files (*.pdf)"
         )
@@ -244,10 +249,39 @@ class PDFMergerApp(QWidget):
 
         try:
             merger = PdfMerger()
-            for pdf in pdf_paths:
-                merger.append(pdf)
+
+            for path in pdf_paths:
+                ext = os.path.splitext(path)[1].lower()
+
+                # If it's already a PDF, append directly
+                if ext == ".pdf":
+                    merger.append(path)
+                    continue
+
+                # Otherwise treat it as an image → convert to PDF
+                if ext in [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"]:
+                    temp_pdf = tempfile.mkstemp(suffix=".pdf")
+                    with open(temp_pdf, "wb") as f:
+                        f.write(img2pdf.convert(path))
+
+                    temp_files.append(temp_pdf)
+                    merger.append(temp_pdf)
+                    continue
+
+                # Unsupported file type
+                QMessageBox.warning(self, "Unsupported File",
+                                    f"Skipping unsupported file:\n{path}")
+
+            # Write merged output
             merger.write(output_file)
             merger.close()
+
+            # Cleanup temporary PDFs
+            for tmp in temp_files:
+                try:
+                    os.remove(tmp)
+                except:
+                    pass
 
             QMessageBox.information(
                 self, "Success", f"Merged PDF saved:\n{output_file}"
@@ -257,6 +291,7 @@ class PDFMergerApp(QWidget):
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error merging PDFs:\n{e}")
+
 
     # ---------------------------------------------------------
     # External PDF viewer
