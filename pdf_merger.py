@@ -228,7 +228,7 @@ class PDFMergerApp(QWidget):
     # ---------------------------------------------------------
     def merge_pdfs(self):
         pdf_paths = []
-        temp_files = []  # to track temporary converted PDFs
+        temp_files = []  # to track temporary converted files
 
         # Collect file paths from the table
         for row in range(self.table.rowCount()):
@@ -258,11 +258,30 @@ class PDFMergerApp(QWidget):
                     merger.append(path)
                     continue
 
-                # Otherwise treat it as an image → convert to PDF
+                # If it's an image
                 if ext in [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"]:
+
+                    # --- STEP 1: Convert PNG → JPG first ---
+                    if ext == ".png":
+                        from PIL import Image
+                        img = Image.open(path).convert("RGB")
+
+                        temp_fd, temp_jpg = tempfile.mkstemp(suffix=".jpg")
+                        os.close(temp_fd)  # close file descriptor
+
+                        img.save(temp_jpg, "JPEG", quality=80)
+                        temp_files.append(temp_jpg)
+
+                        image_to_convert = temp_jpg
+                    else:
+                        image_to_convert = path
+
+                    # --- STEP 2: Convert JPG → PDF ---
                     temp_fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
+                    os.close(temp_fd)
+
                     with open(temp_pdf, "wb") as f:
-                        f.write(img2pdf.convert(path))
+                        f.write(img2pdf.convert(image_to_convert))
 
                     temp_files.append(temp_pdf)
                     merger.append(temp_pdf)
@@ -276,7 +295,7 @@ class PDFMergerApp(QWidget):
             merger.write(output_file)
             merger.close()
 
-            # Cleanup temporary PDFs
+            # Cleanup temporary files
             for tmp in temp_files:
                 try:
                     os.remove(tmp)
