@@ -130,10 +130,10 @@ class PDFMergerApp(QWidget):
     def dropEvent(self, event):
         for url in event.mimeData().urls():
             path = url.toLocalFile()
-            if path.lower().endswith(".pdf"):
+            if path.lower().endswith((".pdf", ".jpg", ".jpeg", ".png", ".bmp", ".tiff")):
                 self.add_pdf_row(path)
             else:
-                QMessageBox.warning(self, "Invalid File", f"Not a PDF:\n{path}")
+                QMessageBox.warning(self, "Invalid File", f"Not a PDF or image file:\n{path}")
 
     # ---------------------------------------------------------
     # Remove handler (find row dynamically)
@@ -260,7 +260,7 @@ class PDFMergerApp(QWidget):
 
                 # Otherwise treat it as an image → convert to PDF
                 if ext in [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"]:
-                    temp_pdf = tempfile.mkstemp(suffix=".pdf")
+                    temp_fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
                     with open(temp_pdf, "wb") as f:
                         f.write(img2pdf.convert(path))
 
