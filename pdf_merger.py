@@ -71,8 +71,14 @@ class PDFMergerApp(QWidget):
         self.table.insertRow(row)
 
         # Column 1: full path
-        file_item = QTableWidgetItem(path)
+        filename = os.path.basename(path)
+
+        file_item = QTableWidgetItem(filename)
         file_item.setFlags(Qt.ItemFlag.ItemIsEnabled)
+
+        # Store full path invisibly
+        file_item.setData(Qt.ItemDataRole.UserRole, path)
+
         self.table.setItem(row, 0, file_item)
 
         # Column 2: actions (View / Remove)
@@ -212,7 +218,7 @@ class PDFMergerApp(QWidget):
             if self.table.cellWidget(row, 1) is parent_widget:
                 item = self.table.item(row, 0)
                 if item:
-                    path = item.text()
+                    path = item.data(Qt.ItemDataRole.UserRole)
                     self.open_pdf(path)
                 return
 
@@ -224,7 +230,7 @@ class PDFMergerApp(QWidget):
         for row in range(self.table.rowCount()):
             item = self.table.item(row, 0)
             if item:
-                pdf_paths.append(item.text())
+                pdf_paths.append(item.data(Qt.ItemDataRole.UserRole))
 
         if not pdf_paths:
             QMessageBox.warning(self, "No Files", "No PDFs added.")
