@@ -9,6 +9,8 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from PyPDF2 import PdfMerger
+from pdf_utils import merge_files
+
 
 class PDFMergerApp(QWidget):
     def __init__(self):
@@ -228,9 +230,7 @@ class PDFMergerApp(QWidget):
     # ---------------------------------------------------------
     def merge_pdfs(self):
         pdf_paths = []
-        temp_files = []  # to track temporary converted files
 
-        # Collect file paths from the table
         for row in range(self.table.rowCount()):
             item = self.table.item(row, 0)
             if item:
@@ -240,7 +240,6 @@ class PDFMergerApp(QWidget):
             QMessageBox.warning(self, "No Files", "No files added.")
             return
 
-        # Ask user where to save the merged PDF
         output_file, _ = QFileDialog.getSaveFileName(
             self, "Save Merged PDF", "merged.pdf", "PDF Files (*.pdf)"
         )
@@ -248,64 +247,12 @@ class PDFMergerApp(QWidget):
             return
 
         try:
-            merger = PdfMerger()
-
-            for path in pdf_paths:
-                ext = os.path.splitext(path)[1].lower()
-
-                # If it's already a PDF, append directly
-                if ext == ".pdf":
-                    merger.append(path)
-                    continue
-
-                # If it's an image
-                if ext in [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"]:
-
-                    # --- STEP 1: Convert PNG → JPG first ---
-                    if ext == ".png":
-                        from PIL import Image
-                        img = Image.open(path).convert("RGB")
-
-                        temp_fd, temp_jpg = tempfile.mkstemp(suffix=".jpg")
-                        os.close(temp_fd)  # close file descriptor
-
-                        img.save(temp_jpg, "JPEG", quality=80)
-                        temp_files.append(temp_jpg)
-
-                        image_to_convert = temp_jpg
-                    else:
-                        image_to_convert = path
-
-                    # --- STEP 2: Convert JPG → PDF ---
-                    temp_fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
-                    os.close(temp_fd)
-
-                    with open(temp_pdf, "wb") as f:
-                        f.write(img2pdf.convert(image_to_convert))
-
-                    temp_files.append(temp_pdf)
-                    merger.append(temp_pdf)
-                    continue
-
-                # Unsupported file type
-                QMessageBox.warning(self, "Unsupported File",
-                                    f"Skipping unsupported file:\n{path}")
-
-            # Write merged output
-            merger.write(output_file)
-            merger.close()
-
-            # Cleanup temporary files
-            for tmp in temp_files:
-                try:
-                    os.remove(tmp)
-                except:
-                    pass
-
+            merge_files(pdf_paths, output_file)
             self.open_pdf(output_file)
 
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Error merging PDFs:\n{e}")
+
 
 
     # ---------------------------------------------------------
