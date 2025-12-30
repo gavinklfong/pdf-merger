@@ -2,14 +2,15 @@ import sys
 import os
 import subprocess
 
-from PyQt6 import uic
-from PyQt6.QtWidgets import (
-    QApplication, QWidget, QTableWidget, QTableWidgetItem,
-    QPushButton, QFileDialog, QMessageBox, QHBoxLayout, QAbstractItemView
-)
+from PyQt6 import uic 
+from PyQt6.QtWidgets import ( 
+    QApplication, QWidget, QTableWidget, QTableWidgetItem, QPushButton, QFileDialog, QMessageBox, QHBoxLayout, QAbstractItemView, QMenuBar, QMenu, QVBoxLayout ) 
+from PyQt6.QtGui import QAction 
 from PyQt6.QtCore import Qt
 
-from pdf_utils import merge_files
+from logic.pdf_utils import merge_files
+from models.file_list_model import FileListModel
+from views.file_table_view import FileTableView
 
 
 class PDFMergerApp(QWidget):
@@ -17,61 +18,88 @@ class PDFMergerApp(QWidget):
         super().__init__()
 
         # Load UI from .ui file
-        uic.loadUi("pdf_merger.ui", self)
+        uic.loadUi("ui/pdf_merger.ui", self)
 
-        # Ensure main window properties
-        self.setWindowTitle("PDF Merger")
-        self.setMinimumSize(750, 500)
-        self.setAcceptDrops(True)
+        # Replace the placeholder table (QTableWidget from .ui) with FileTableView
+        self._setup_table_view()
 
-        # The .ui defines a QTableWidget named "table"
+        # Setup model
+        self.model = FileListModel(self)
+        self.table.setModel(self.model)
+
+        # Menu bar
+        self._create_menu_bar()
+
+        # Configure columns/visual behavior
         self._configure_table()
 
-        # Connect buttons (names from .ui: add_btn, merge_btn, remove_all_btn)
+        # Connect buttons from UI
         self.add_btn.clicked.connect(self.add_pdfs)
         self.merge_btn.clicked.connect(self.merge_pdfs)
         self.remove_all_btn.clicked.connect(self.remove_all_pdfs)
+
+        # React to model changes to rebuild action widgets
+        self.model.rowsInserted.connect(self._rebuild_action_widgets)
+        self.model.rowsRemoved.connect(self._rebuild_action_widgets)
+        self.model.modelReset.connect(self._rebuild_action_widgets)
+        self.model.rowsMoved.connect(self._rebuild_action_widgets)
+
+        self.setAcceptDrops(True)
+        self.setWindowTitle("PDF Merger")
+        self.setMinimumSize(750, 500)
+
+    # ---------------------------------------------------------
+    # Replace table from .ui with FileTableView
+    # ---------------------------------------------------------
+    def _setup_table_view(self):
+        # The .ui has a widget named "table", likely QTableWidget
+        old_table = self.table
+
+        # Create our custom view
+        self.table = FileTableView(self)
+
+        # Replace in layout
+        parent_layout = old_table.parent().layout()
+        index = parent_layout.indexOf(old_table)
+        parent_layout.removeWidget(old_table)
+        old_table.deleteLater()
+        parent_layout.insertWidget(index, self.table)
+
+    # ---------------------------------------------------------
+    # Menu bar
+    # ---------------------------------------------------------
+    def _create_menu_bar(self):
+        self.menu_bar = QMenuBar(self)
+        # Top-level layout from .ui is assumed to be a QVBoxLayout
+        self.layout().setMenuBar(self.menu_bar)
+
+        settings_menu = QMenu("Settings", self)
+        self.menu_bar.addMenu(settings_menu)
+
+        settings_action = QAction("Preferences", self)
+        settings_action.triggered.connect(self._open_settings)
+        settings_menu.addAction(settings_action)
+
+    def _open_settings(self):
+        QMessageBox.information(self, "Settings", "Settings dialog goes here.")
 
     # ---------------------------------------------------------
     # Table configuration
     # ---------------------------------------------------------
     def _configure_table(self):
-        # Defensive: ensure 2 columns and labels
-        self.table.setColumnCount(2)
-        self.table.setHorizontalHeaderLabels(["File", "Actions"])
-
         header = self.table.horizontalHeader()
         header.setStretchLastSection(False)
         header.setSectionResizeMode(0, header.ResizeMode.Stretch)
         header.setSectionResizeMode(1, header.ResizeMode.ResizeToContents)
 
-        self.table.setAlternatingRowColors(True)
-        self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.table.setDragDropMode(QAbstractItemView.DragDropMode.InternalMove)
-        self.table.setDragEnabled(True)
-        self.table.setDropIndicatorShown(True)
-
         self.table.verticalHeader().setDefaultSectionSize(40)
+        self.table.setAlternatingRowColors(True)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
 
     # ---------------------------------------------------------
-    # Add a new row
+    # Action widgets (Up / Down / View / Remove) per row
     # ---------------------------------------------------------
-    def add_pdf_row(self, path):
-        if not os.path.isfile(path):
-            QMessageBox.warning(self, "File Missing", f"File not found:\n{path}")
-            return
-
-        row = self.table.rowCount()
-        self.table.insertRow(row)
-
-        # Column 0: file name (visible), full path stored in UserRole
-        filename = os.path.basename(path)
-        file_item = QTableWidgetItem(filename)
-        file_item.setFlags(Qt.ItemFlag.ItemIsEnabled)  # not editable
-        file_item.setData(Qt.ItemDataRole.UserRole, path)
-        self.table.setItem(row, 0, file_item)
-
-        # Column 1: actions (Up / Down / View / Remove)
+    def _create_action_widget_for_row(self, row):
         action_layout = QHBoxLayout()
         action_layout.setContentsMargins(5, 0, 5, 0)
 
@@ -93,9 +121,31 @@ class PDFMergerApp(QWidget):
 
         action_widget = QWidget()
         action_widget.setLayout(action_layout)
-        self.table.setCellWidget(row, 1, action_widget)
+
+        index = self.model.index(row, 1)
+        self.table.setIndexWidget(index, action_widget)
+
+    def _rebuild_action_widgets(self):
+        # Clear existing index widgets (Qt handles deletion)
+        for row in range(self.model.rowCount()):
+            index = self.model.index(row, 1)
+            self.table.setIndexWidget(index, None)
+
+        # Recreate them
+        for row in range(self.model.rowCount()):
+            self._create_action_widget_for_row(row)
 
     # ---------------------------------------------------------
+    # Add rows
+    # ---------------------------------------------------------
+    def add_pdf_row(self, path):
+        if not os.path.isfile(path):
+            QMessageBox.warning(self, "File Missing", f"File not found:\n{path}")
+            return
+
+        self.model.add_file(path)
+        # The rowsInserted signal will rebuild action widgets
+
     def add_pdfs(self):
         files, _ = QFileDialog.getOpenFileNames(
             self,
@@ -107,10 +157,10 @@ class PDFMergerApp(QWidget):
             self.add_pdf_row(f)
 
     def remove_all_pdfs(self):
-        self.table.setRowCount(0)
+        self.model.clear()
 
     # ---------------------------------------------------------
-    # Drag & Drop support
+    # Drag & Drop support (for files from OS)
     # ---------------------------------------------------------
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -125,123 +175,70 @@ class PDFMergerApp(QWidget):
                 QMessageBox.warning(self, "Invalid File", f"Not a supported file:\n{path}")
 
     # ---------------------------------------------------------
-    # Remove handler (find row dynamically)
+    # Row helpers: find row from action button sender
+    # ---------------------------------------------------------
+    def _row_from_sender(self, sender):
+        if sender is None:
+            return -1
+
+        parent_widget = sender.parent()
+        if parent_widget is None:
+            return -1
+
+        # Use indexAt with the parent's position
+        index = self.table.indexAt(parent_widget.pos())
+        return index.row()
+
+    # ---------------------------------------------------------
+    # Remove handler
     # ---------------------------------------------------------
     def _on_remove_clicked(self):
         sender = self.sender()
-        if sender is None:
+        row = self._row_from_sender(sender)
+        if row < 0:
             return
-
-        parent_widget = sender.parent()
-        if parent_widget is None:
-            return
-
-        for row in range(self.table.rowCount()):
-            if self.table.cellWidget(row, 1) is parent_widget:
-                self.table.removeRow(row)
-                return
+        self.model.remove_row(row)
 
     # ---------------------------------------------------------
-    # Move Up / Down handlers (swap rows)
+    # Move Up / Down handlers
     # ---------------------------------------------------------
-    def _swap_rows(self, row1, row2):
-        if not (0 <= row1 < self.table.rowCount() and 0 <= row2 < self.table.rowCount()):
-            return
-
-        # Swap the file item
-        item1 = self.table.item(row1, 0)
-        item2 = self.table.item(row2, 0)
-
-        if not item1 or not item2:
-            return
-
-        text1 = item1.text()
-        text2 = item2.text()
-        path1 = item1.data(Qt.ItemDataRole.UserRole)
-        path2 = item2.data(Qt.ItemDataRole.UserRole)
-
-        item1.setText(text2)
-        item1.setData(Qt.ItemDataRole.UserRole, path2)
-
-        item2.setText(text1)
-        item2.setData(Qt.ItemDataRole.UserRole, path1)
-
     def _on_up_clicked(self):
         sender = self.sender()
-        if sender is None:
+        row = self._row_from_sender(sender)
+        if row <= 0:
             return
-
-        parent_widget = sender.parent()
-        if parent_widget is None:
-            return
-
-        current_row = -1
-        for row in range(self.table.rowCount()):
-            if self.table.cellWidget(row, 1) is parent_widget:
-                current_row = row
-                break
-
-        if current_row > 0:
-            self._swap_rows(current_row, current_row - 1)
+        self.model.move_up(row)
 
     def _on_down_clicked(self):
         sender = self.sender()
-        if sender is None:
+        row = self._row_from_sender(sender)
+        if row < 0 or row >= self.model.rowCount() - 1:
             return
-
-        parent_widget = sender.parent()
-        if parent_widget is None:
-            return
-
-        current_row = -1
-        for row in range(self.table.rowCount()):
-            if self.table.cellWidget(row, 1) is parent_widget:
-                current_row = row
-                break
-
-        if current_row >= 0 and current_row < self.table.rowCount() - 1:
-            self._swap_rows(current_row, current_row + 1)
+        self.model.move_down(row)
 
     # ---------------------------------------------------------
     # View handler
     # ---------------------------------------------------------
     def _on_view_clicked(self):
         sender = self.sender()
-        if sender is None:
+        row = self._row_from_sender(sender)
+        if row < 0:
             return
 
-        parent_widget = sender.parent()
-        if parent_widget is None:
-            return
-
-        for row in range(self.table.rowCount()):
-            if self.table.cellWidget(row, 1) is parent_widget:
-                item = self.table.item(row, 0)
-                if item:
-                    path = item.data(Qt.ItemDataRole.UserRole)
-                    if path:
-                        self.open_file(path)
-                return
+        path = self.model.get_path(row)
+        if path:
+            self.open_file(path)
 
     # ---------------------------------------------------------
     # Merge PDFs
     # ---------------------------------------------------------
     def merge_pdfs(self):
-        file_paths = []
-
-        # Collect file paths from the table
-        for row in range(self.table.rowCount()):
-            item = self.table.item(row, 0)
-            if item:
-                path = item.data(Qt.ItemDataRole.UserRole)
-                if path:
-                    file_paths.append(path)
+        file_paths = self.model.get_paths_in_order()
 
         if not file_paths:
             QMessageBox.warning(self, "No Files", "No files added.")
             return
 
-        # Ask user where to save the merged PDF
         output_file, _ = QFileDialog.getSaveFileName(
             self,
             "Save Merged PDF",
