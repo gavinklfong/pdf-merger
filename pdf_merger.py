@@ -1,8 +1,6 @@
 import sys
 import os
 import subprocess
-import tempfile
-import img2pdf
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QTableWidget, QTableWidgetItem,
     QPushButton, QFileDialog, QMessageBox, QHBoxLayout, QAbstractItemView, QWidget
