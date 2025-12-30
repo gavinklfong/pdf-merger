@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PDFMergerApp</class>
+ <widget class="QWidget" name="PDFMergerApp">
+  <property name="windowTitle">
+   <string>PDF Merger</string>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>750</width>
+    <height>500</height>
+   </size>
+  </property>
+
+  <layout class="QVBoxLayout" name="mainLayout">
+
+   <!-- Table -->
+   <item>
+    <widget class="QTableWidget" name="table">
+     <column>
+      <property name="text">
+       <string>File</string>
+      </property>
+     </column>
+     <column>
+      <property name="text">
+       <string>Actions</string>
+      </property>
+     </column>
+    </widget>
+   </item>
+
+   <!-- Buttons -->
+   <item>
+    <layout class="QHBoxLayout" name="buttonLayout">
+
+     <item>
+      <widget class="QPushButton" name="add_btn">
+       <property name="text">
+        <string>Add PDFs</string>
+       </property>
+      </widget>
+     </item>
+
+     <item>
+      <widget class="QPushButton" name="merge_btn">
+       <property name="text">
+        <string>Merge PDFs</string>
+       </property>
+      </widget>
+     </item>
+
+     <item>
+      <widget class="QPushButton" name="remove_all_btn">
+       <property name="text">
+        <string>Remove All PDFs</string>
+       </property>
+      </widget>
+     </item>
+
+    </layout>
+   </item>
+
+  </layout>
+ </widget>
+
+ <resources/>
+ <connections/>
+</ui>
