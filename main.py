@@ -69,8 +69,15 @@ class PDFMergerApp(QMainWindow):
     def _configure_table(self):
         header = self.table.horizontalHeader()
         header.setStretchLastSection(False)
-        header.setSectionResizeMode(0, header.ResizeMode.Stretch)
-        header.setSectionResizeMode(1, header.ResizeMode.ResizeToContents)
+
+        # Column 0: sequence number (#)
+        header.setSectionResizeMode(0, header.ResizeMode.ResizeToContents)
+
+        # Column 1: file name (stretch to fill space)
+        header.setSectionResizeMode(1, header.ResizeMode.Stretch)
+
+        # Column 2: actions (fit to contents)
+        header.setSectionResizeMode(2, header.ResizeMode.ResizeToContents)
 
         self.table.verticalHeader().setDefaultSectionSize(40)
         self.table.setAlternatingRowColors(True)

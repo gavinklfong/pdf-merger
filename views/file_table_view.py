@@ -36,5 +36,5 @@ class FileTableView(QTableView):
         widget = QWidget()
         widget.setLayout(layout)
 
-        index = self.model().index(row, 1)
+        index = self.model().index(row, 2)
         self.setIndexWidget(index, widget)

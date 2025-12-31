@@ -9,9 +9,9 @@ class FileListModel(QAbstractTableModel):
     """
     Table model storing a list of files.
 
-    Column 0: File name (displayed)
-    Column 1: Actions (buttons in view; model provides only header/placeholder)
-    Full path is stored in internal data and exposed via UserRole.
+    Column 0: Sequence number (#)
+    Column 1: File name
+    Column 2: Actions (buttons in view; model provides only header/placeholder)
     """
 
     def __init__(self, parent=None):
@@ -25,7 +25,7 @@ class FileListModel(QAbstractTableModel):
         return len(self._files)
 
     def columnCount(self, parent=QModelIndex()):
-        return 2  # File + Actions
+        return 3  # #, File, Actions
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid():
@@ -37,8 +37,11 @@ class FileListModel(QAbstractTableModel):
 
         if role == Qt.ItemDataRole.DisplayRole:
             if col == 0:
-                return file["name"]
+                # Sequence number (1-based)
+                return str(row + 1)
             if col == 1:
+                return file["name"]
+            if col == 2:
                 return ""  # Action column uses widgets
 
         if role == Qt.ItemDataRole.UserRole:
@@ -51,7 +54,7 @@ class FileListModel(QAbstractTableModel):
             return None
 
         if orientation == Qt.Orientation.Horizontal:
-            return ["File", "Actions"][section]
+            return ["#", "File", "Actions"][section]
 
         return None
 
