@@ -1,7 +1,7 @@
 import os
 import tempfile
 import img2pdf
-from PyPDF2 import PdfMerger
+from pypdf import PdfReader, PdfWriter
 from PIL import Image
 
 
@@ -37,12 +37,7 @@ def convert_image_to_pdf(path):
 
 
 def merge_files(file_paths, output_file):
-    """
-    Merges a list of PDF or image paths into a single PDF.
-    Cleans up all temporary files before returning.
-    """
-
-    merger = PdfMerger()
+    writer = PdfWriter()
     temp_files = []
 
     try:
@@ -50,30 +45,28 @@ def merge_files(file_paths, output_file):
             ext = os.path.splitext(path)[1].lower()
 
             if ext == ".pdf":
-                merger.append(path)
+                reader = PdfReader(path)
+                for page in reader.pages:
+                    writer.add_page(page)
                 continue
 
             if ext in [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"]:
                 temp_pdf, created = convert_image_to_pdf(path)
                 temp_files.extend(created)
-                merger.append(temp_pdf)
+
+                reader = PdfReader(temp_pdf)
+                for page in reader.pages:
+                    writer.add_page(page)
                 continue
 
             print(f"Skipping unsupported file: {path}")
 
-        merger.write(output_file)
+        with open(output_file, "wb") as f:
+            writer.write(f)
 
     finally:
-        # Always close merger
-        try:
-            merger.close()
-        except:
-            pass
-
-        # Always clean up temp files
         for tmp in temp_files:
             try:
                 os.remove(tmp)
             except:
                 pass
-
