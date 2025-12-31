@@ -4,9 +4,8 @@ import subprocess
 
 from PyQt6 import uic 
 from PyQt6.QtWidgets import ( 
-    QApplication, QWidget, QTableWidget, QTableWidgetItem, QPushButton, QFileDialog, QMessageBox, QHBoxLayout, QAbstractItemView, QMenuBar, QMenu, QVBoxLayout ) 
+    QApplication, QWidget, QPushButton, QFileDialog, QMessageBox, QHBoxLayout, QAbstractItemView, QMenuBar, QMenu ) 
 from PyQt6.QtGui import QAction 
-from PyQt6.QtCore import Qt
 
 from logic.pdf_utils import merge_files
 from models.file_list_model import FileListModel
