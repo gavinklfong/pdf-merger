@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
     <class>PDFMergerApp</class>
-    <widget class="QWidget" name="PDFMergerApp">
+    <widget class="QMainWindow" name="PDFMergerApp">
         <property name="geometry">
             <rect>
                 <x>0</x>
@@ -14,20 +14,75 @@
             <string>PDF Merger</string>
         </property>
 
-        <!-- Menu Bar (must NOT be inside the layout) -->
+        <!-- Central widget -->
+        <widget class="QWidget" name="centralwidget">
+            <layout class="QVBoxLayout" name="verticalLayout">
+                <item>
+                    <widget class="QTableWidget" name="table">
+                        <column>
+                            <property name="text">
+                                <string>File</string>
+                            </property>
+                        </column>
+                        <column>
+                            <property name="text">
+                                <string>Actions</string>
+                            </property>
+                        </column>
+                    </widget>
+                </item>
+
+                <item>
+                    <layout class="QHBoxLayout" name="buttonRow">
+                        <item>
+                            <widget class="QPushButton" name="add_btn">
+                                <property name="text">
+                                    <string>Add Files</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item>
+                            <widget class="QPushButton" name="merge_btn">
+                                <property name="text">
+                                    <string>Merge</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item>
+                            <widget class="QPushButton" name="remove_all_btn">
+                                <property name="text">
+                                    <string>Remove All</string>
+                                </property>
+                            </widget>
+                        </item>
+                        <item>
+                            <spacer name="horizontalSpacer">
+                                <property name="orientation">
+                                    <enum>Qt::Horizontal</enum>
+                                </property>
+                                <property name="sizeType">
+                                    <enum>QSizePolicy::Expanding</enum>
+                                </property>
+                                <property name="sizeHint" stdset="0">
+                                    <size>
+                                        <width>40</width>
+                                        <height>20</height>
+                                    </size>
+                                </property>
+                            </spacer>
+
+                        </item>
+                    </layout>
+                </item>
+            </layout>
+        </widget>
+
+        <!-- Menu bar (no geometry!) -->
         <widget class="QMenuBar" name="menuBar">
-            <property name="geometry">
-                <rect>
-                    <x>0</x>
-                    <y>0</y>
-                    <width>750</width>
-                    <height>22</height>
-                </rect>
-            </property>
             <addaction name="menuSettings" />
         </widget>
 
-        <!-- Settings Menu -->
+        <!-- Settings menu -->
         <widget class="QMenu" name="menuSettings">
             <property name="title">
                 <string>Settings</string>
@@ -35,80 +90,14 @@
             <addaction name="actionPreferences" />
         </widget>
 
-        <!-- Preferences Action -->
+        <!-- Preferences action -->
         <action name="actionPreferences">
             <property name="text">
                 <string>Preferences</string>
             </property>
         </action>
 
-        <!-- Main Layout -->
-        <layout class="QVBoxLayout" name="verticalLayout">
-
-            <!-- Table Placeholder -->
-            <item>
-                <widget class="QTableWidget" name="table">
-                    <column>
-                        <property name="text">
-                            <string>File</string>
-                        </property>
-                    </column>
-                    <column>
-                        <property name="text">
-                            <string>Actions</string>
-                        </property>
-                    </column>
-                </widget>
-            </item>
-
-            <!-- Buttons Row -->
-            <item>
-                <layout class="QHBoxLayout" name="buttonRow">
-
-                    <item>
-                        <widget class="QPushButton" name="add_btn">
-                            <property name="text">
-                                <string>Add Files</string>
-                            </property>
-                        </widget>
-                    </item>
-
-                    <item>
-                        <widget class="QPushButton" name="merge_btn">
-                            <property name="text">
-                                <string>Merge</string>
-                            </property>
-                        </widget>
-                    </item>
-
-                    <item>
-                        <widget class="QPushButton" name="remove_all_btn">
-                            <property name="text">
-                                <string>Remove All</string>
-                            </property>
-                        </widget>
-                    </item>
-
-                    <item>
-                        <spacer name="horizontalSpacer">
-                            <property name="orientation">
-                                <enum>Qt::Horizontal</enum>
-                            </property>
-                            <property name="sizeHint" stdset="0">
-                                <size>
-                                    <width>40</width>
-                                    <height>20</height>
-                                </size>
-                            </property>
-                        </spacer>
-                    </item>
-
-                </layout>
-            </item>
-
-        </layout>
     </widget>
-
     <resources />
     <connections />
 </ui>

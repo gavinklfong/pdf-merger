@@ -1,7 +1,7 @@
 import sys
 from PyQt6 import uic
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QAbstractItemView
+    QApplication, QWidget, QAbstractItemView, QMainWindow
 )
 
 from models.file_list_model import FileListModel
@@ -9,7 +9,7 @@ from views.file_table_view import FileTableView
 from controllers.ui_actions import UIActions
 
 
-class PDFMergerApp(QWidget):
+class PDFMergerApp(QMainWindow):
     def __init__(self):
         super().__init__()
 
