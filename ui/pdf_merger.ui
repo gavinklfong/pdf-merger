@@ -14,6 +14,27 @@
             <string>PDF Merger</string>
         </property>
 
+
+        <!-- Menu bar (no geometry!) -->
+        <widget class="QMenuBar" name="menuBar">
+            <addaction name="menuSettings" />
+        </widget>
+
+        <!-- Settings menu -->
+        <widget class="QMenu" name="menuSettings">
+            <property name="title">
+                <string>Settings</string>
+            </property>
+            <addaction name="actionPreferences" />
+        </widget>
+
+        <!-- Preferences action -->
+        <action name="actionPreferences">
+            <property name="text">
+                <string>Preferences</string>
+            </property>
+        </action>
+
         <!-- Central widget -->
         <widget class="QWidget" name="centralwidget">
             <layout class="QVBoxLayout" name="verticalLayout">
@@ -76,27 +97,6 @@
                 </item>
             </layout>
         </widget>
-
-        <!-- Menu bar (no geometry!) -->
-        <widget class="QMenuBar" name="menuBar">
-            <addaction name="menuSettings" />
-        </widget>
-
-        <!-- Settings menu -->
-        <widget class="QMenu" name="menuSettings">
-            <property name="title">
-                <string>Settings</string>
-            </property>
-            <addaction name="actionPreferences" />
-        </widget>
-
-        <!-- Preferences action -->
-        <action name="actionPreferences">
-            <property name="text">
-                <string>Preferences</string>
-            </property>
-        </action>
-
     </widget>
     <resources />
     <connections />
