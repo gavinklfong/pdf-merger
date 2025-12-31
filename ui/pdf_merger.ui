@@ -1,69 +1,114 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>PDFMergerApp</class>
- <widget class="QWidget" name="PDFMergerApp">
-  <property name="windowTitle">
-   <string>PDF Merger</string>
-  </property>
-  <property name="minimumSize">
-   <size>
-    <width>750</width>
-    <height>500</height>
-   </size>
-  </property>
+    <class>PDFMergerApp</class>
+    <widget class="QWidget" name="PDFMergerApp">
+        <property name="geometry">
+            <rect>
+                <x>0</x>
+                <y>0</y>
+                <width>750</width>
+                <height>500</height>
+            </rect>
+        </property>
+        <property name="windowTitle">
+            <string>PDF Merger</string>
+        </property>
 
-  <layout class="QVBoxLayout" name="mainLayout">
+        <!-- Menu Bar (must NOT be inside the layout) -->
+        <widget class="QMenuBar" name="menuBar">
+            <property name="geometry">
+                <rect>
+                    <x>0</x>
+                    <y>0</y>
+                    <width>750</width>
+                    <height>22</height>
+                </rect>
+            </property>
+            <addaction name="menuSettings" />
+        </widget>
 
-   <!-- Table -->
-   <item>
-    <widget class="QTableWidget" name="table">
-     <column>
-      <property name="text">
-       <string>File</string>
-      </property>
-     </column>
-     <column>
-      <property name="text">
-       <string>Actions</string>
-      </property>
-     </column>
+        <!-- Settings Menu -->
+        <widget class="QMenu" name="menuSettings">
+            <property name="title">
+                <string>Settings</string>
+            </property>
+            <addaction name="actionPreferences" />
+        </widget>
+
+        <!-- Preferences Action -->
+        <action name="actionPreferences">
+            <property name="text">
+                <string>Preferences</string>
+            </property>
+        </action>
+
+        <!-- Main Layout -->
+        <layout class="QVBoxLayout" name="verticalLayout">
+
+            <!-- Table Placeholder -->
+            <item>
+                <widget class="QTableWidget" name="table">
+                    <column>
+                        <property name="text">
+                            <string>File</string>
+                        </property>
+                    </column>
+                    <column>
+                        <property name="text">
+                            <string>Actions</string>
+                        </property>
+                    </column>
+                </widget>
+            </item>
+
+            <!-- Buttons Row -->
+            <item>
+                <layout class="QHBoxLayout" name="buttonRow">
+
+                    <item>
+                        <widget class="QPushButton" name="add_btn">
+                            <property name="text">
+                                <string>Add Files</string>
+                            </property>
+                        </widget>
+                    </item>
+
+                    <item>
+                        <widget class="QPushButton" name="merge_btn">
+                            <property name="text">
+                                <string>Merge</string>
+                            </property>
+                        </widget>
+                    </item>
+
+                    <item>
+                        <widget class="QPushButton" name="remove_all_btn">
+                            <property name="text">
+                                <string>Remove All</string>
+                            </property>
+                        </widget>
+                    </item>
+
+                    <item>
+                        <spacer name="horizontalSpacer">
+                            <property name="orientation">
+                                <enum>Qt::Horizontal</enum>
+                            </property>
+                            <property name="sizeHint" stdset="0">
+                                <size>
+                                    <width>40</width>
+                                    <height>20</height>
+                                </size>
+                            </property>
+                        </spacer>
+                    </item>
+
+                </layout>
+            </item>
+
+        </layout>
     </widget>
-   </item>
 
-   <!-- Buttons -->
-   <item>
-    <layout class="QHBoxLayout" name="buttonLayout">
-
-     <item>
-      <widget class="QPushButton" name="add_btn">
-       <property name="text">
-        <string>Add PDFs</string>
-       </property>
-      </widget>
-     </item>
-
-     <item>
-      <widget class="QPushButton" name="merge_btn">
-       <property name="text">
-        <string>Merge PDFs</string>
-       </property>
-      </widget>
-     </item>
-
-     <item>
-      <widget class="QPushButton" name="remove_all_btn">
-       <property name="text">
-        <string>Remove All PDFs</string>
-       </property>
-      </widget>
-     </item>
-
-    </layout>
-   </item>
-
-  </layout>
- </widget>
-
- <resources/>
- <connections/>
+    <resources />
+    <connections />
 </ui>
