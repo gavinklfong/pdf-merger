@@ -2,8 +2,8 @@ import pytest
 from PyQt6.QtWidgets import QApplication, QWidget, QPushButton
 from PyQt6.QtCore import Qt
 
-from models.file_list_model import FileListModel
-from views.file_table_view import FileTableView
+from file_list_model import FileListModel
+from file_table_view import FileTableView
 
 
 # ---------------------------------------------------------

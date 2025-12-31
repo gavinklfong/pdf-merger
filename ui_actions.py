@@ -92,7 +92,7 @@ class UIActions:
     # Merge PDFs
     # ---------------------------------------------------------
     def merge_pdfs(self):
-        from logic.pdf_utils import merge_files
+        from pdf_utils import merge_files
 
         file_paths = self.model.get_paths_in_order()
 

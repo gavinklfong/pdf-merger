@@ -2,8 +2,8 @@ import pytest
 from PyQt6.QtWidgets import QWidget, QPushButton, QMenuBar
 
 from main import PDFMergerApp
-from views.file_table_view import FileTableView
-from models.file_list_model import FileListModel
+from file_table_view import FileTableView
+from file_list_model import FileListModel
 
 
 def test_main_window_initializes(qtbot):
@@ -44,8 +44,8 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QPushButton, QMenuBar
 
 from main import PDFMergerApp
-from views.file_table_view import FileTableView
-from models.file_list_model import FileListModel
+from file_table_view import FileTableView
+from file_list_model import FileListModel
 
 
 def test_main_window_initializes(qtbot):

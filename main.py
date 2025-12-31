@@ -4,9 +4,9 @@ from PyQt6.QtWidgets import (
     QApplication, QWidget, QAbstractItemView, QMainWindow
 )
 
-from models.file_list_model import FileListModel
-from views.file_table_view import FileTableView
-from controllers.ui_actions import UIActions
+from file_list_model import FileListModel
+from file_table_view import FileTableView
+from ui_actions import UIActions
 
 
 class PDFMergerApp(QMainWindow):

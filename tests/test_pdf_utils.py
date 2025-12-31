@@ -6,7 +6,7 @@ import pytest
 from PIL import Image
 from pypdf import PdfReader
 
-from logic.pdf_utils import convert_image_to_pdf, merge_files
+from pdf_utils import convert_image_to_pdf, merge_files
 
 
 # ---------------------------------------------------------

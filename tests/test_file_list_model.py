@@ -1,7 +1,7 @@
 import pytest
 from PyQt6.QtCore import Qt, QModelIndex
 
-from models.file_list_model import FileListModel
+from file_list_model import FileListModel
 
 
 # ---------------------------------------------------------
