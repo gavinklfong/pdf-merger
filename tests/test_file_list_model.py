@@ -20,7 +20,7 @@ def create_model_with_files(paths):
 def test_initial_state():
     model = FileListModel()
     assert model.rowCount() == 0
-    assert model.columnCount() == 2
+    assert model.columnCount() == 3
 
 
 def test_add_file_increases_row_count():
@@ -35,9 +35,11 @@ def test_add_file_increases_row_count():
 def test_data_display_role():
     model = create_model_with_files(["/tmp/a.pdf"])
 
-    index_name = model.index(0, 0)
-    index_actions = model.index(0, 1)
+    index_seq = model.index(0, 0)
+    index_name = model.index(0, 1)
+    index_actions = model.index(0, 2)
 
+    assert model.data(index_seq, Qt.ItemDataRole.DisplayRole) == "1"
     assert model.data(index_name, Qt.ItemDataRole.DisplayRole) == "a.pdf"
     assert model.data(index_actions, Qt.ItemDataRole.DisplayRole) == ""
 
@@ -51,8 +53,9 @@ def test_data_user_role():
 
 def test_header_labels():
     model = FileListModel()
-    assert model.headerData(0, Qt.Orientation.Horizontal) == "File"
-    assert model.headerData(1, Qt.Orientation.Horizontal) == "Actions"
+    assert model.headerData(0, Qt.Orientation.Horizontal) == "#"
+    assert model.headerData(1, Qt.Orientation.Horizontal) == "File"
+    assert model.headerData(2, Qt.Orientation.Horizontal) == "Actions"
 
 
 # ---------------------------------------------------------

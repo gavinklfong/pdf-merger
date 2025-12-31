@@ -49,7 +49,7 @@ def test_create_action_widget(qtbot):
     view.create_action_widget(0, actions)
 
     # Retrieve the widget placed in column 1
-    index = model.index(0, 1)
+    index = model.index(0, 2)
     widget = view.indexWidget(index)
 
     assert widget is not None
@@ -92,7 +92,7 @@ def test_action_widget_replaces_existing(qtbot):
 
     # First creation
     view.create_action_widget(0, actions)
-    index = model.index(0, 1)
+    index = model.index(0, 2)
     widget1 = view.indexWidget(index)
 
     # Second creation should replace the widget
