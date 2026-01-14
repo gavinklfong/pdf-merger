@@ -93,7 +93,6 @@ class FileListWidget(QListWidget):
         widget.viewRequested.connect(lambda w=widget: self.viewFileItem(w)) 
         widget.deleteRequested.connect(lambda w=widget: self.removeFileItem(w))
 
-
     def removeFileItem(self, widget):
         row = self._rowOfWidget(widget)
         print("Delete:", widget.filePath)
@@ -105,6 +104,19 @@ class FileListWidget(QListWidget):
 
     def viewFile(self, filename):
         print("View:", filename)
+
+    def getAllFilePaths(self):
+        paths = []
+        for i in range(self.count()):
+            widget = self.itemWidget(self.item(i))
+            paths.append(widget.filePath)
+        return paths
+    
+    def removeAllFileItems(self):
+        while self.count() > 0:
+            item = self.takeItem(0)
+            widget = self.itemWidget(item)
+            widget.deleteLater()
 
     def _rowOfWidget(self, widget):
         for i in range(self.count()):
