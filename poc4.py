@@ -101,14 +101,17 @@ class FileListWidget(QListWidget):
         widget.deleteLater()
 
     def viewFileItem(self, widget):
-        print("View:", widget.filePath)
+        self.viewFile(widget.filePath)
+
+    def viewFile(self, filename):
+        print("View:", filename)
 
     def _rowOfWidget(self, widget):
         for i in range(self.count()):
             if self.itemWidget(self.item(i)) is widget:
                 return i
         return -1
-
+    
 
     # -----------------------------------------------------
     #  External file drop support
@@ -148,6 +151,7 @@ class MainWindow(QWidget):
         super().__init__()
 
         self.list = FileListWidget()
+        self.list.viewFile = self.view_file  # Override viewFile method
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.list)
