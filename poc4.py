@@ -11,20 +11,21 @@ from PySide6.QtCore import Qt
 #  Custom widget for each row (filename + buttons)
 # ---------------------------------------------------------
 class FileItemWidget(QWidget):
-    def __init__(self, filename, on_view, on_delete):
+    
+    def __init__(self, filePath, on_view, on_delete):
         super().__init__()
 
-        self.filename = filename
+        self.filePath = filePath
 
         layout = QHBoxLayout(self)
         layout.setContentsMargins(8, 4, 8, 4)
 
-        self.label = QLabel(filename)
+        self.label = QLabel(os.path.basename(filePath))
         btn_view = QPushButton("View")
         btn_delete = QPushButton("Delete")
 
-        btn_view.clicked.connect(lambda: on_view(self.filename))
-        btn_delete.clicked.connect(lambda: on_delete(self.filename))
+        btn_view.clicked.connect(lambda: on_view(self.filePath))
+        btn_delete.clicked.connect(lambda: on_delete(self.filePath))
 
         layout.addWidget(self.label)
         layout.addStretch()
@@ -33,6 +34,7 @@ class FileItemWidget(QWidget):
 
         self.setMouseTracking(True)
 
+        self.setToolTip(self.filePath)
 
 # ---------------------------------------------------------
 #  Custom QListWidget with:
@@ -72,36 +74,35 @@ class FileListWidget(QListWidget):
         """)
 
     def addFileItem(self, path):
-        filename = os.path.basename(path)
-
+        
         widget = FileItemWidget(
-            filename,
+            path,
             on_view=self.viewFileItem,
-            on_delete=self.removeFileItemByFilename
+            on_delete=self.removeFileItem
         )
 
         # IMPORTANT:
         # - item text must contain filename (for drag pixmap)
         # - foreground transparent prevents overlap
-        item = QListWidgetItem(filename)
+        item = QListWidgetItem(os.path.basename(path))
         item.setForeground(Qt.transparent)
         item.setSizeHint(widget.sizeHint())
 
         self.addItem(item)
         self.setItemWidget(item, widget)
 
-    def removeFileItemByFilename(self, filename):
+    def removeFileItem(self, path):
         for i in range(self.count()):
             item = self.item(i)
             widget = self.itemWidget(item)
-            if widget and widget.filename == filename:
+            if widget and widget.filePath == path:
                 self.takeItem(i)
                 widget.deleteLater()
                 del item
                 return
 
-    def viewFileItem(self, filename):
-        print("View:", filename)
+    def viewFileItem(self, path):
+        print("View:", path)
 
     # -----------------------------------------------------
     #  External file drop support
