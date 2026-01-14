@@ -71,6 +71,38 @@ class FileListWidget(QListWidget):
             }
         """)
 
+    def addFileItem(self, path):
+        filename = os.path.basename(path)
+
+        widget = FileItemWidget(
+            filename,
+            on_view=self.viewFileItem,
+            on_delete=self.removeFileItemByFilename
+        )
+
+        # IMPORTANT:
+        # - item text must contain filename (for drag pixmap)
+        # - foreground transparent prevents overlap
+        item = QListWidgetItem(filename)
+        item.setForeground(Qt.transparent)
+        item.setSizeHint(widget.sizeHint())
+
+        self.addItem(item)
+        self.setItemWidget(item, widget)
+
+    def removeFileItemByFilename(self, filename):
+        for i in range(self.count()):
+            item = self.item(i)
+            widget = self.itemWidget(item)
+            if widget and widget.filename == filename:
+                self.takeItem(i)
+                widget.deleteLater()
+                del item
+                return
+
+    def viewFileItem(self, filename):
+        print("View:", filename)
+
     # -----------------------------------------------------
     #  External file drop support
     # -----------------------------------------------------
@@ -99,7 +131,7 @@ class FileListWidget(QListWidget):
     # This will be overridden by MainWindow
     def handleDroppedFile(self, path):
         print("Dropped:", path)
-
+        self.addFileItem(path)
 
 # ---------------------------------------------------------
 #  Main Window
@@ -109,60 +141,19 @@ class MainWindow(QWidget):
         super().__init__()
 
         self.list = FileListWidget()
-        self.list.handleDroppedFile = self.add_file_item  # override callback
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.list)
 
         # Example items
         for f in ["report.pdf", "image.png", "notes.txt"]:
-            self.add_file_item(f)
-
-    # -----------------------------------------------------
-    #  Add file item (single call)
-    # -----------------------------------------------------
-    def add_file_item(self, path):
-        filename = os.path.basename(path)
-
-        widget = FileItemWidget(
-            filename,
-            on_view=self.view_file,
-            on_delete=self.delete_file
-        )
-
-        # IMPORTANT:
-        # - item text must contain filename (for drag pixmap)
-        # - foreground transparent prevents overlap
-        item = QListWidgetItem(filename)
-        item.setForeground(Qt.transparent)
-        item.setSizeHint(widget.sizeHint())
-
-        self.list.addItem(item)
-        self.list.setItemWidget(item, widget)
+            self.list.addFileItem(f)
 
     # -----------------------------------------------------
     #  Callbacks
     # -----------------------------------------------------
     def view_file(self, filename):
         print("View:", filename)
-
-    def delete_file(self, filename):
-        print("Delete:", filename)
-        self.remove_by_filename(filename)
-
-    # -----------------------------------------------------
-    #  Remove item by filename
-    # -----------------------------------------------------
-    def remove_by_filename(self, filename):
-        for i in range(self.list.count()):
-            item = self.list.item(i)
-            widget = self.list.itemWidget(item)
-            if widget and widget.filename == filename:
-                self.list.takeItem(i)
-                widget.deleteLater()
-                del item
-                return
-
 
 # ---------------------------------------------------------
 #  Run App
