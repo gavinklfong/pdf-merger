@@ -4,15 +4,17 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QListWidget, QListWidgetItem,
     QLabel, QPushButton, QHBoxLayout, QVBoxLayout
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 
 
 # ---------------------------------------------------------
 #  Custom widget for each row (filename + buttons)
 # ---------------------------------------------------------
 class FileItemWidget(QWidget):
-    
-    def __init__(self, filePath, on_view, on_delete):
+    viewRequested = Signal() 
+    deleteRequested = Signal()
+
+    def __init__(self, filePath):
         super().__init__()
 
         self.filePath = filePath
@@ -24,8 +26,8 @@ class FileItemWidget(QWidget):
         btn_view = QPushButton("View")
         btn_delete = QPushButton("Delete")
 
-        btn_view.clicked.connect(lambda: on_view(self.filePath))
-        btn_delete.clicked.connect(lambda: on_delete(self.filePath))
+        btn_view.clicked.connect(self.viewRequested) 
+        btn_delete.clicked.connect(self.deleteRequested)
 
         layout.addWidget(self.label)
         layout.addStretch()
@@ -45,6 +47,7 @@ class FileItemWidget(QWidget):
 #   - hover highlight
 # ---------------------------------------------------------
 class FileListWidget(QListWidget):
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -75,11 +78,7 @@ class FileListWidget(QListWidget):
 
     def addFileItem(self, path):
         
-        widget = FileItemWidget(
-            path,
-            on_view=self.viewFileItem,
-            on_delete=self.removeFileItem
-        )
+        widget = FileItemWidget(path)
 
         # IMPORTANT:
         # - item text must contain filename (for drag pixmap)
@@ -91,18 +90,25 @@ class FileListWidget(QListWidget):
         self.addItem(item)
         self.setItemWidget(item, widget)
 
-    def removeFileItem(self, path):
-        for i in range(self.count()):
-            item = self.item(i)
-            widget = self.itemWidget(item)
-            if widget and widget.filePath == path:
-                self.takeItem(i)
-                widget.deleteLater()
-                del item
-                return
+        widget.viewRequested.connect(lambda w=widget: self.viewFileItem(w)) 
+        widget.deleteRequested.connect(lambda w=widget: self.removeFileItem(w))
 
-    def viewFileItem(self, path):
-        print("View:", path)
+
+    def removeFileItem(self, widget):
+        row = self._rowOfWidget(widget)
+        print("Delete:", widget.filePath)
+        self.takeItem(row)
+        widget.deleteLater()
+
+    def viewFileItem(self, widget):
+        print("View:", widget.filePath)
+
+    def _rowOfWidget(self, widget):
+        for i in range(self.count()):
+            if self.itemWidget(self.item(i)) is widget:
+                return i
+        return -1
+
 
     # -----------------------------------------------------
     #  External file drop support
