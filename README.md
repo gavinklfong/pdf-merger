@@ -1,11 +1,15 @@
 # pdf-merger
 
-## dependency installation
+# Usage
 
-This program requires native C library tkinter
+Merge multiple PDF files into a single output PDF.
 
-For python installed by brew, here are the steps to install the library
+options:
+-h, --help show this help message and exit
+-i, --input INPUT [INPUT ...]
+List of input PDF file paths
+-o, --output OUTPUT Output PDF file path
 
-1. sudo apt install tk tk-dev tcl tcl-dev
-2. brew reinstall python
-3. Remove virtual env and re-create it again
+## Example
+
+python merge_pdf.py -i /tmp/a.pdf /home/test/b.pdf -o /tmp/output.pdf
