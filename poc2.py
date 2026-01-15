@@ -1,103 +1,86 @@
-import sys
-from PySide6.QtWidgets import (
-    QApplication, QWidget, QLabel, QVBoxLayout, QFrame,
-    QGraphicsOpacityEffect
-)
-from PySide6.QtCore import Qt, QMimeData
-from PySide6.QtGui import QDrag, QPixmap
+
+from PySide6.QtWidgets import QApplication, QTableView, QAbstractItemView
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QMimeData, QByteArray
 
 
-class DraggableRow(QLabel):
-    def __init__(self, text):
-        super().__init__(text)
+class DragDropTableModel(QAbstractTableModel):
+    def __init__(self, data):
+        super().__init__()
+        self._data = data
 
-        self.setFixedHeight(40)
-        self.setFrameStyle(QFrame.Shape.Box)
-        self.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        self.setStyleSheet("background-color: lightblue; padding-left: 8px;")
+    # --- Required table model functions ---
+    def rowCount(self, parent=None):
+        return len(self._data)
 
-        self.opacity = QGraphicsOpacityEffect(self)
-        self.opacity.setOpacity(1.0)
-        self.setGraphicsEffect(self.opacity)
+    def columnCount(self, parent=None):
+        return len(self._data[0])
 
-    def mousePressEvent(self, event):
-        if event.button() != Qt.MouseButton.LeftButton:
-            return
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            return self._data[index.row()][index.column()]
 
-        drag = QDrag(self)
+    # --- Enable dragging & dropping rows ---
+    def flags(self, index):
+        default = super().flags(index)
+        return default | Qt.ItemIsDragEnabled | Qt.ItemIsDropEnabled
+
+    def supportedDropActions(self):
+        return Qt.MoveAction
+
+    def mimeTypes(self):
+        return ["application/x-row"]
+
+    def mimeData(self, indexes):
         mime = QMimeData()
-        mime.setText(self.text())
-        drag.setMimeData(mime)
+        row = indexes[0].row()
+        mime.setData("application/x-row", QByteArray(str(row).encode()))
+        return mime
 
-        pixmap = QPixmap(self.size())
-        self.render(pixmap)
-        drag.setPixmap(pixmap)
-        drag.setHotSpot(event.position().toPoint())
+    def dropMimeData(self, mimeData, action, row, column, parent):
+        if action == Qt.IgnoreAction:
+            return False
 
-        self.opacity.setOpacity(0.4)
-        drag.exec(Qt.DropAction.MoveAction)
-        self.opacity.setOpacity(1.0)
+        from_row = int(bytes(mimeData.data("application/x-row")).decode())
 
+        # If row is -1, compute it using parent index
+        if row == -1:
+            if parent.isValid():
+                row = parent.row()
+            else:
+                # fallback: append at end
+                row = self.rowCount()
 
-class TableWidget(QFrame):
-    def __init__(self):
-        super().__init__()
-        self.setAcceptDrops(True)
-        self.setFrameStyle(QFrame.Shape.StyledPanel)
+        # if row > from_row:
+        #     row -= 1
 
-        self.layout = QVBoxLayout(self)
-        self.layout.setSpacing(4)
-        self.layout.addStretch()
+        self.beginMoveRows(QModelIndex(), from_row, from_row, QModelIndex(), row)
+        self._data.insert(row, self._data.pop(from_row))
+        self.endMoveRows()
 
-    def dragEnterEvent(self, event):
-        if event.mimeData().hasText():
-            event.acceptProposedAction()
-
-    def dropEvent(self, event):
-        source = event.source()
-        if not isinstance(source, DraggableRow):
-            return
-
-        pos_y = event.position().toPoint().y()
-        insert_index = self.layout.count() - 1  # default: before stretch
-
-        for i in range(self.layout.count()):
-            item = self.layout.itemAt(i)
-            widget = item.widget()
-
-            if widget is None or widget is source:
-                continue
-
-            if pos_y < widget.y() + widget.height() / 2:
-                insert_index = i
-                break
-
-        self.layout.insertWidget(insert_index, source)
-        event.acceptProposedAction()
+        return True
 
 
+# ---------- App Setup ----------
+app = QApplication([])
 
-class MainWindow(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Reorderable Table (One Row per Box)")
-        self.resize(400, 300)
+data = [
+    ["A", 1],
+    ["B", 2],
+    ["C", 3],
+    ["D", 4],
+]
 
-        layout = QVBoxLayout(self)
+model = DragDropTableModel(data)
 
-        table = TableWidget()
-        layout.addWidget(table)
+view = QTableView()
+view.setModel(model)
 
-        # Initial rows
-        for text in ["Row A", "Row B", "Row C", "Row D"]:
-            table.layout.insertWidget(
-                table.layout.count() - 1,
-                DraggableRow(text)
-            )
+# Enable row moving
+view.setDragDropMode(QAbstractItemView.InternalMove)
+view.setDragEnabled(True)
+view.setAcceptDrops(True)
+view.setDropIndicatorShown(True)
+view.setDefaultDropAction(Qt.MoveAction)
 
-
-if __name__ == "__main__":
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
+view.show()
+app.exec()
