@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import argparse
 import os
-from pdf_utils import merge_files
+import tempfile
 import logging
+from pdf_utils import merge_files, optimize_pdf_with_ghostscript
+
 
 logging.basicConfig( 
     level=logging.INFO, 
@@ -47,7 +49,25 @@ def main():
         print(f"Error: Output directory does not exist: {out_dir}")
         return
 
-    merge_files(args.input, args.output)
+    # Create a temporary PDF file for output
+    fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
+    os.close(fd)
+
+    try:
+        logging.info("Generating merged pdf")
+        merge_files(args.input, temp_pdf)
+        
+        # Optimize the merged PDF
+        logging.info("Optimizing output pdf")
+        optimize_pdf_with_ghostscript(temp_pdf, args.output)
+
+    finally:
+        # Cleanup temporary files
+        try:
+            os.remove(temp_pdf)
+        except:
+            pass
+
 
 
 if __name__ == "__main__":

@@ -120,18 +120,7 @@ def merge_files(file_paths, output_file):
 
         pbar.close()
 
-        logging.info("Generating merged pdf")
-        # Create a temporary PDF file for output
-        fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
-        os.close(fd)
-        temp_files.extend(temp_pdf)
-
-        with open(temp_pdf, "wb") as f:
-            writer.write(f)
-        
-        # Optimize the merged PDF
-        logging.info("Optimizing output pdf")
-        optimize_pdf_with_ghostscript(temp_pdf, output_file)
+        writer.write(output_file)
 
     finally:
         # Cleanup temporary files
