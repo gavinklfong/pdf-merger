@@ -2,6 +2,11 @@
 import argparse
 import os
 from pdf_utils import merge_files
+import logging
+
+logging.basicConfig( 
+    level=logging.INFO, 
+    format="[%(levelname)s] %(message)s" )
 
 
 def parse_args():

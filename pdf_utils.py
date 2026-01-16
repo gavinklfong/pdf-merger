@@ -5,6 +5,7 @@ from pypdf import PdfReader, PdfWriter
 import subprocess
 import shutil
 from tqdm import tqdm
+import logging
 
 
 def convert_image_to_pdf(path):
@@ -21,7 +22,7 @@ def convert_image_to_pdf(path):
         with open(temp_pdf, "wb") as f:
             f.write(img2pdf.convert(path))
     except Exception as e:
-        print(f"Error converting image to PDF: {path} -> {e}")
+        logging.error(f"Error converting image to PDF: {path} -> {e}")
         raise
 
     return temp_pdf
@@ -37,8 +38,8 @@ def optimize_pdf_with_ghostscript(input_pdf, output_pdf, quality="ebook"):
     gs = shutil.which("gs") or shutil.which("gswin64c") or shutil.which("gswin32c")
 
     if not gs:
-        print("[INFO] Ghostscript not found. Skipping optimization.")
-        print(f"[INFO] Copying input PDF to output: {output_pdf}")
+        logging.warning("Ghostscript not found. Skipping optimization.")
+        logging.debug(f"Copying input PDF to output: {output_pdf}")
         shutil.copyfile(input_pdf, output_pdf)
         return
 
@@ -66,14 +67,13 @@ def optimize_pdf_with_ghostscript(input_pdf, output_pdf, quality="ebook"):
 
     try:
         subprocess.run(cmd, check=True)
-        print(f"[INFO] PDF optimized using Ghostscript ({quality}). Output: {output_pdf}")
+        logging.debug(f"PDF optimized using Ghostscript ({quality}). Output: {output_pdf}")
     except subprocess.CalledProcessError as e:
-        print("[ERROR] Ghostscript optimization failed. Copying input PDF instead.")
-        print(f"[ERROR] Reason: {e}")
+        logging.error("Ghostscript optimization failed. Skip optimization.")
+        logging.error(f"Reason: {e}")
         shutil.copyfile(input_pdf, output_pdf)
 
-def create_progress_bar(file_paths):
-    # Count total pages 
+def count_total_pages(file_paths):
     total_pages = 0 
     for path in file_paths: 
         if path.lower().endswith(".pdf"): 
@@ -81,15 +81,16 @@ def create_progress_bar(file_paths):
         elif path.lower().endswith((".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp")): 
             total_pages += 1  # Each image counts as one page
     
-    print(f"[INFO] Merging a total of {total_pages} pages from {len(file_paths)} files.")
-    return tqdm(total=total_pages, desc="Merging pages", unit="page")
+    return total_pages
 
 
 def merge_files(file_paths, output_file):
     writer = PdfWriter()
     temp_files = []
 
-    pbar = create_progress_bar(file_paths)
+    total_pages = count_total_pages(file_paths)
+    logging.info(f"Merging a total of {total_pages} pages from {len(file_paths)} files.")
+    pbar = tqdm(total=total_pages, desc="Merging pages", unit="page")
 
     try:
         # Process each file
@@ -115,11 +116,11 @@ def merge_files(file_paths, output_file):
                     pbar.update(1)
                 continue
 
-            print(f"[WARN] Skipping unsupported file: {path}")
+            logging.warning(f"Skipping unsupported file: {path}")
 
         pbar.close()
 
-        print("[INFO] Generating merged pdf")
+        logging.info("Generating merged pdf")
         # Create a temporary PDF file for output
         fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
         os.close(fd)
@@ -129,7 +130,7 @@ def merge_files(file_paths, output_file):
             writer.write(f)
         
         # Optimize the merged PDF
-        print("[INFO] Optimizing output pdf")
+        logging.info("Optimizing output pdf")
         optimize_pdf_with_ghostscript(temp_pdf, output_file)
 
     finally:
