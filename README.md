@@ -5,6 +5,9 @@
 > Accuracy of the output file is subject to quality of those libraries.<br>
 > Please use it with caution and always verify the output content manually.
 
+# Requirements
+* This tool requires Python to run. 
+* Install Ghostscript on your local machine if you would like to compress the output. However, it is optional, the tool will skip compression if Ghostscript is not found.
 
 # Usage
 
