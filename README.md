@@ -1,4 +1,10 @@
-# pdf-merger
+# PDF Merger
+
+> [!WARNING]
+> This PDF merger relies open source libraries for PDF conversion and merging.<br>
+> Accuracy of the output file is subject to quality of those libraries.<br>
+> Please use it with caution and always verify the output content manually.
+
 
 # Usage
 
