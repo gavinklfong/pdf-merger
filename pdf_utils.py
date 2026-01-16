@@ -108,7 +108,7 @@ def merge_files(file_paths, output_file):
             # Handle image files
             if ext in [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"]:
                 temp_pdf = convert_image_to_pdf(path)
-                temp_files.extend(temp_pdf)
+                temp_files.append(temp_pdf)
 
                 reader = PdfReader(temp_pdf)
                 for page in reader.pages:
