@@ -50,7 +50,7 @@ class MainWindow(QWidget):
             elif os.name == "posix":
                 subprocess.run(["xdg-open", path])
         except Exception as e:
-            QMessageBox.critical(self.window, "Open Error", str(e))
+            QMessageBox.critical(self, "Open Error", str(e))
 
     # ---------------------------------------------------------
     # Merge files
@@ -59,7 +59,7 @@ class MainWindow(QWidget):
         file_paths = self.list.getAllFilePaths()
         
         if not file_paths:
-            QMessageBox.warning(self.window, "No Files", "No files added.")
+            QMessageBox.warning(self, "No Files", "No files added.")
             return
 
         output_file, _ = QFileDialog.getSaveFileName(
