@@ -19,7 +19,7 @@ class MainWindow(QWidget):
 
         self.setWindowTitle("PDF Merger")
         self.list = FileItemListWidget()
-        self.list.viewFile = self.view_file  # Override viewFile method
+        self.list.viewFile = self.viewFile  # Override viewFile method
 
         layout = QVBoxLayout(self)
         layout.addWidget(self.list)
@@ -41,7 +41,7 @@ class MainWindow(QWidget):
     # ---------------------------------------------------------
     # External viewer
     # ---------------------------------------------------------
-    def view_file(self, path):
+    def viewFile(self, path):
         try:
             if sys.platform.startswith("darwin"):
                 subprocess.run(["open", path])
