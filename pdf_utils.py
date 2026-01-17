@@ -28,7 +28,7 @@ def convert_image_to_pdf(path):
     return temp_pdf
 
 
-def optimize_pdf_with_ghostscript(input_pdf, output_pdf, quality="ebook"):
+def optimize_pdf_with_ghostscript(input_pdf, output_pdf, quality="printer"):
     """
     Optimize a PDF using Ghostscript.
     If Ghostscript is not installed, skip optimization and simply copy the input PDF.

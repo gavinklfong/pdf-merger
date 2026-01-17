@@ -62,7 +62,11 @@ class FileItemListWidget(QListWidget):
     def removeFileItem(self, widget):
         row = self._rowOfWidget(widget)
         print("Delete:", widget.filePath)
-        self.takeItem(row)
+
+        item = self.item(row)
+        if item:
+            self.takeItem(row)
+
         widget.deleteLater()
 
     def viewFileItem(self, widget):
@@ -80,9 +84,11 @@ class FileItemListWidget(QListWidget):
     
     def removeAllFileItems(self):
         while self.count() > 0:
-            item = self.takeItem(0)
+            item = self.item(0)
             widget = self.itemWidget(item)
-            widget.deleteLater()
+            if widget:
+                widget.deleteLater()
+            self.takeItem(0)
 
     def _rowOfWidget(self, widget):
         for i in range(self.count()):
