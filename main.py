@@ -22,6 +22,8 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
+        self.sortAscending = False
+
         self.setWindowTitle("PDF Merger")
         self.list = FileItemListWidget()
         self.list.viewFile = self.viewFile  # Override viewFile method
@@ -46,7 +48,7 @@ class MainWindow(QWidget):
 
 
         sortFileButton = QPushButton("Sort Files by Date")
-        sortFileButton.clicked.connect(self.list.sortFilesByDate)
+        sortFileButton.clicked.connect(self.toggleSort)
         sortFileButton.setStyleSheet("""
             QPushButton {
                 background-color: #bdc3c7;      /* soft grey */
@@ -98,6 +100,13 @@ class MainWindow(QWidget):
                 subprocess.run(["xdg-open", path])
         except Exception as e:
             QMessageBox.critical(self, "Open Error", str(e))
+
+    # ---------------------------------------------------------
+    # Sort files
+    # ---------------------------------------------------------
+    def toggleSort(self):
+        self.sortAscending = not self.sortAscending
+        self.list.sortFilesByDate(self.sortAscending)
 
     # ---------------------------------------------------------
     # Merge files

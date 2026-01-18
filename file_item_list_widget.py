@@ -18,9 +18,6 @@ class FileItemListWidget(QListWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        # Track sort direction
-        self._sortAscending = False
-
         # Internal drag reorder
         self.setDragEnabled(True)
         self.setAcceptDrops(True)
@@ -37,11 +34,8 @@ class FileItemListWidget(QListWidget):
         
         widget = FileItemWidget(path)
 
-        # IMPORTANT:
-        # - item text must contain filename (for drag pixmap)
-        # - foreground transparent prevents overlap
-        item = QListWidgetItem(os.path.basename(path))
-        item.setForeground(Qt.transparent)
+        item = QListWidgetItem()
+        # item.setForeground(Qt.transparent)
         item.setSizeHint(widget.sizeHint())
 
         self.addItem(item)
@@ -83,19 +77,14 @@ class FileItemListWidget(QListWidget):
                 widget.deleteLater()
             self.takeItem(0)
 
-    def sortFilesByDate(self):
-        self._sortAscending = not self._sortAscending
-
+    def sortFilesByDate(self, ascending):
         file_paths = self.getAllFilePaths()
-        sorted_paths = sort_files_by_date(file_paths, ascending=self._sortAscending)
+        sorted_paths = sort_files_by_date(file_paths, ascending=ascending)
 
-        self.setUpdatesEnabled(False)
-        try:
-            self.removeAllFileItems()
-            for path in sorted_paths:
-                self.addFileItem(path)
-        finally:
-            self.setUpdatesEnabled(True)
+        self.removeAllFileItems()
+        for path in sorted_paths:
+            self.addFileItem(path)
+
 
     def _adjustWidthToContents(self):
         max_width = 0

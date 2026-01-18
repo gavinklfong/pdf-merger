@@ -62,7 +62,6 @@ def sort_files_by_date(filenames, ascending=True):
             if ascending:
                 return (1, name)
             else:
-                # reverse alphabetical without using reverse=
-                return (1, "".join(chr(255 - ord(c)) for c in name))
+                return (1, tuple(-ord(c) for c in name))
 
     return sorted(filenames, key=sort_key)
