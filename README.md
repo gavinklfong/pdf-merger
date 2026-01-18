@@ -11,17 +11,28 @@
 
 # Usage
 
-Merge multiple PDF files into a single output PDF.
+This tool comes with command line and GUI interface. 
+
+**Command line**
+
+Run `merge_pdf.py` to execute command line
 
 ```
 options:
 -h, --help show this help message and exit
 -i, --input INPUT [INPUT ...]    List of input PDF file paths
 -o, --output OUTPUT              Output PDF file path
+
 ```
 
-## Example
+Example:
 
 ```
 python merge_pdf.py -i /tmp/a.pdf /home/test/b.pdf -o /tmp/output.pdf
 ```
+
+
+**GUI**
+
+Run `main.py` to launch GUI interface
+
