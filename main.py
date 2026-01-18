@@ -27,10 +27,14 @@ class MainWindow(QWidget):
         mergeFileButton = QPushButton("Merge Files")
         mergeFileButton.clicked.connect(self.mergeFileItems)
 
+        sortFileButton = QPushButton("Sort Files by Date")
+        sortFileButton.clicked.connect(self.list.sortFilesByDate)
+
         clearButton = QPushButton("Clear All Items")
         clearButton.clicked.connect(self.list.removeAllFileItems)
 
         buttonLayout = QHBoxLayout()
+        buttonLayout.addWidget(sortFileButton)
         buttonLayout.addWidget(mergeFileButton)
         buttonLayout.addStretch()
         buttonLayout.addWidget(clearButton)

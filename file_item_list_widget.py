@@ -2,7 +2,7 @@ import os
 from PySide6.QtWidgets import ( QListWidget, QListWidgetItem)
 from PySide6.QtCore import Qt
 from file_item_widget import FileItemWidget
-
+from file_utils import sort_files_by_date
 
 # ---------------------------------------------------------
 #  Custom QListWidget with:
@@ -16,6 +16,9 @@ class FileItemListWidget(QListWidget):
 
     def __init__(self, parent=None):
         super().__init__(parent)
+
+        # Track sort direction
+        self._sortAscending = False
 
         # Internal drag reorder
         self.setDragEnabled(True)
@@ -89,6 +92,18 @@ class FileItemListWidget(QListWidget):
             if widget:
                 widget.deleteLater()
             self.takeItem(0)
+
+    def sortFilesByDate(self):
+        # Toggle direction each time this method is called 
+        self._sortAscending = not self._sortAscending
+
+        file_paths = self.getAllFilePaths()
+        sorted_paths = sort_files_by_date(file_paths, ascending=self._sortAscending)
+
+        self.removeAllFileItems()
+        for path in sorted_paths:
+            self.addFileItem(path)
+
 
     def _rowOfWidget(self, widget):
         for i in range(self.count()):
