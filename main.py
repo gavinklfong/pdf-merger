@@ -10,6 +10,11 @@ from PySide6.QtWidgets import (
 from file_item_list_widget import FileItemListWidget
 from pdf_merger import merge_files, optimize_pdf_with_ghostscript
 
+
+logging.basicConfig( 
+    level=logging.INFO, 
+    format="[%(levelname)s] %(message)s" )
+
 # ---------------------------------------------------------
 #  Main Window
 # ---------------------------------------------------------
@@ -89,7 +94,7 @@ class MainWindow(QWidget):
             optimize_pdf_with_ghostscript(temp_pdf, output_file)
 
             # Open the resulting file
-            self.view_file(output_file)
+            self.viewFile(output_file)
 
         finally:
             # Cleanup temporary files

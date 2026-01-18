@@ -66,22 +66,3 @@ def sort_files_by_date(filenames, ascending=True):
                 return (1, "".join(chr(255 - ord(c)) for c in name))
 
     return sorted(filenames, key=sort_key)
-
-
-
-
-
-
-
-# Example usage
-files = [
-    "report_2021_Jan.pdf",
-    "summary_2020_12.xlsx",
-    "invoice_March_2019.docx",
-    "notes_2018_7.txt",
-    "data_2021_Feb.csv",
-    "randomfile.txt"
-]
-
-sorted_files = sort_files_by_date(files)
-print(sorted_files)

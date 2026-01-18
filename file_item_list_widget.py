@@ -1,4 +1,5 @@
 import os
+import logging
 from PySide6.QtWidgets import ( QListWidget, QListWidgetItem)
 from PySide6.QtCore import Qt
 from file_item_widget import FileItemWidget
@@ -62,13 +63,15 @@ class FileItemListWidget(QListWidget):
         widget.viewRequested.connect(lambda w=widget: self.viewFileItem(w)) 
         widget.deleteRequested.connect(lambda w=widget: self.removeFileItem(w))
 
+        self._adjustWidthToContents()
+
     def removeFileItem(self, widget):
         row = self._rowOfWidget(widget)
-        print("Delete:", widget.filePath)
+        logging.debug("Delete:", widget.filePath)
 
         item = self.item(row)
         if item:
-            self.takeItem(row)
+            self.takeItem(row)            
 
         widget.deleteLater()
 
@@ -76,7 +79,7 @@ class FileItemListWidget(QListWidget):
         self.viewFile(widget.filePath)
 
     def viewFile(self, filename):
-        print("View:", filename)
+        logging.debug("View:", filename)
 
     def getAllFilePaths(self):
         paths = []
@@ -94,15 +97,32 @@ class FileItemListWidget(QListWidget):
             self.takeItem(0)
 
     def sortFilesByDate(self):
-        # Toggle direction each time this method is called 
         self._sortAscending = not self._sortAscending
 
         file_paths = self.getAllFilePaths()
         sorted_paths = sort_files_by_date(file_paths, ascending=self._sortAscending)
 
-        self.removeAllFileItems()
-        for path in sorted_paths:
-            self.addFileItem(path)
+        self.setUpdatesEnabled(False)
+        try:
+            self.removeAllFileItems()
+            for path in sorted_paths:
+                self.addFileItem(path)
+        finally:
+            self.setUpdatesEnabled(True)
+
+    def _adjustWidthToContents(self):
+        max_width = 0
+        for i in range(self.count()):
+            item = self.item(i)
+            widget = self.itemWidget(item)
+            if widget:
+                max_width = max(max_width, widget.sizeHint().width())
+
+        # Add some padding for margins and scrollbars
+        max_width += 40
+
+        # Resize the list widget
+        self.setMinimumWidth(max_width)
 
 
     def _rowOfWidget(self, widget):
@@ -139,5 +159,5 @@ class FileItemListWidget(QListWidget):
 
     # This will be overridden by MainWindow
     def handleDroppedFile(self, path):
-        print("Dropped:", path)
+        logging.debug("Dropped:", path)
         self.addFileItem(path)
