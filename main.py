@@ -31,12 +31,50 @@ class MainWindow(QWidget):
 
         mergeFileButton = QPushButton("Merge Files")
         mergeFileButton.clicked.connect(self.mergeFileItems)
+        mergeFileButton.setStyleSheet("""
+            QPushButton {
+                background-color: #3e8e41;      /* modern green */
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #45a049;      /* slightly darker on hover */
+            }
+            QPushButton:pressed {
+                background-color: #3e8e41;      /* deeper green when pressed */
+            }
+        """)
+
 
         sortFileButton = QPushButton("Sort Files by Date")
         sortFileButton.clicked.connect(self.list.sortFilesByDate)
+        sortFileButton.setStyleSheet("""
+            QPushButton {
+                background-color: #bdc3c7;      /* soft grey */
+                color: #2c3e50;                 /* dark text for contrast */
+            }
+            QPushButton:hover {
+                background-color: #aeb6bf;      /* slightly darker on hover */
+            }
+            QPushButton:pressed {
+                background-color: #95a5a6;      /* deeper grey when pressed */
+            }
+        """)
+
 
         clearButton = QPushButton("Clear All Items")
         clearButton.clicked.connect(self.list.removeAllFileItems)
+        clearButton.setStyleSheet("""
+            QPushButton {
+                background-color: #e74c3c;      /* strong red */
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #c0392b;      /* darker red on hover */
+            }
+            QPushButton:pressed {
+                background-color: #a93226;      /* deeper red when pressed */
+            }
+        """)
 
         buttonLayout = QHBoxLayout()
         buttonLayout.addWidget(sortFileButton)
