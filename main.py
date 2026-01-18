@@ -153,8 +153,9 @@ class MainWindow(QWidget):
 # ---------------------------------------------------------
 #  Run App
 # ---------------------------------------------------------
-app = QApplication(sys.argv)
-w = MainWindow()
-w.resize(500, 300)
-w.show()
-app.exec()
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    w = MainWindow()
+    w.resize(500, 300)
+    w.show()
+    app.exec()
