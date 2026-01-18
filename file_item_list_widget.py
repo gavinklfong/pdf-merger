@@ -33,19 +33,6 @@ class FileItemListWidget(QListWidget):
         # Drop indicator
         self.setDropIndicatorShown(True)
 
-        # Hover highlight
-        self.setMouseTracking(True)
-        self.setStyleSheet("""
-            QListWidget::item:hover {
-                background: #e6f2ff;
-                border: 1px solid #99ccff;
-            }
-            QListWidget::item:selected {
-                background: #cce6ff;
-                border: 1px solid #66b3ff;
-            }
-        """)
-
     def addFileItem(self, path):
         
         widget = FileItemWidget(path)

@@ -35,7 +35,7 @@ def optimize_pdf_with_ghostscript(input_pdf, output_pdf, quality="printer"):
     """
 
     # Try to locate Ghostscript
-    gs = shutil.which("gs") or shutil.which("gswin64c") or shutil.which("gswin32c")
+    gs = shutil.which("gs") or shutil.which("gswin64") or shutil.which("gswin32")
 
     if not gs:
         logging.warning("Ghostscript not found. Skipping optimization.")
