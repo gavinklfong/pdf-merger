@@ -1,6 +1,7 @@
 import os
 import tempfile
 import img2pdf
+from PIL import Image
 from pypdf import PdfReader, PdfWriter
 import subprocess
 import shutil
@@ -10,25 +11,42 @@ import logging
 
 def convert_image_to_pdf(path):
     """
-    Convert an image file (PNG/JPG/etc.) into a temporary PDF.
-    Returns (temp_pdf_path, [temp_pdf_path]) for cleanup.
+    Converts an image (PNG/JPG/etc.) to a temporary PDF file.
+    Returns the path to the temporary PDF.
     """
 
-    # Create a temporary PDF file
-    fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
-    os.close(fd)
+    ext = os.path.splitext(path)[1].lower()
+    temp_jpg = None
 
     try:
+        # STEP 1 — Convert PNG → JPG
+        if ext == ".png":
+            img = Image.open(path).convert("RGB")
+            fd, temp_jpg = tempfile.mkstemp(suffix=".jpg")
+            os.close(fd)
+            img.save(temp_jpg, "JPEG", quality=80)
+            image_to_convert = temp_jpg
+        else:
+            image_to_convert = path
+
+        # STEP 2 — Convert JPG → PDF
+        fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
+        os.close(fd)
+
         with open(temp_pdf, "wb") as f:
-            f.write(img2pdf.convert(path))
-    except Exception as e:
-        logging.error(f"Error converting image to PDF: {path} -> {e}")
-        raise
+            f.write(img2pdf.convert(image_to_convert))
 
-    return temp_pdf
+        return temp_pdf
+
+    finally:
+        # Cleanup temporary jpg file 
+            try:
+                os.remove(temp_jpg)
+            except:
+                pass
 
 
-def optimize_pdf_with_ghostscript(input_pdf, output_pdf, quality="printer"):
+def optimize_pdf_with_ghostscript(input_pdf, output_pdf, quality="ebook"):
     """
     Optimize a PDF using Ghostscript.
     If Ghostscript is not installed, skip optimization and simply copy the input PDF.
