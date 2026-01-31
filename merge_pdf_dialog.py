@@ -48,14 +48,18 @@ class MergePDFDialog(QDialog):
 
         # --- OK / Cancel Buttons ---
         buttonRow = QHBoxLayout()
-        okBtn = QPushButton("OK")
-        cancelBtn = QPushButton("Cancel")
-        okBtn.clicked.connect(self.accept)
-        cancelBtn.clicked.connect(self.reject)
-        buttonRow.addWidget(okBtn)
-        buttonRow.addWidget(cancelBtn)
+
+        self.okBtn = QPushButton("OK")
+        self.cancelBtn = QPushButton("Cancel")
+
+        self.okBtn.clicked.connect(self.accept)
+        self.cancelBtn.clicked.connect(self.reject)
+
+        buttonRow.addWidget(self.okBtn)
+        buttonRow.addWidget(self.cancelBtn)
 
         layout.addLayout(buttonRow)
+
 
     # Map slider → text
     def updateCompressionLabel(self, value):

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox,
     QFileDialog, QDialog
 )
+from PySide6.QtGui import QGuiApplication
 from file_item_list_widget import FileItemListWidget
 
 
@@ -86,6 +87,12 @@ class MainWindow(QWidget):
 
         layout.addLayout(buttonLayout)
 
+    
+    def centerOnScreen(self):
+        screen = QGuiApplication.primaryScreen().availableGeometry()
+        size = self.frameGeometry()
+        size.moveCenter(screen.center())
+        self.move(size.topLeft())
 
     # ---------------------------------------------------------
     # External viewer
@@ -156,6 +163,7 @@ class MainWindow(QWidget):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     w = MainWindow()
-    w.resize(500, 300)
+    w.centerOnScreen()
+    w.resize(800, 400)
     w.show()
     app.exec()
