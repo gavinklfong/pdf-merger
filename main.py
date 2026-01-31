@@ -1,14 +1,13 @@
 import sys
 import os
 import subprocess
-import tempfile
 import logging
+from pdf_utils import merge_and_optimize
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox,
     QFileDialog
 )
 from file_item_list_widget import FileItemListWidget
-from pdf_merger import merge_files, optimize_pdf_with_ghostscript
 
 
 logging.basicConfig( 
@@ -127,28 +126,11 @@ class MainWindow(QWidget):
         if not output_file:
             return
 
-        # Create a temporary PDF file for output
-        fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
-        os.close(fd)
-
-        try:
-            logging.info("Generating merged pdf")
-            # Merge files
-            merge_files(file_paths, temp_pdf)
-            
-            # Optimize the merged PDF
-            logging.info("Optimizing output pdf")
-            optimize_pdf_with_ghostscript(temp_pdf, output_file)
-
-            # Open the resulting file
-            self.viewFile(output_file)
-
-        finally:
-            # Cleanup temporary files
-            try:
-                os.remove(temp_pdf)
-            except:
-                pass
+        # Perform merging and optimization
+        merge_and_optimize(file_paths, output_file)
+        
+        # Open the resulting file
+        self.viewFile(output_file)
 
 # ---------------------------------------------------------
 #  Run App

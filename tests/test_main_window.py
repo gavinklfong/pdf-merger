@@ -60,14 +60,12 @@ def test_merge_with_files_calls_merge_and_optimize(qtbot, tmp_path):
     # Mock file dialog
     with patch("main.QFileDialog.getSaveFileName", return_value=("output.pdf", None)):
         # Mock merge + optimize
-        with patch("main.merge_files") as mock_merge, \
-             patch("main.optimize_pdf_with_ghostscript") as mock_opt, \
+        with patch("main.merge_and_optimize") as mock_merge, \
              patch.object(win, "viewFile") as mock_view:
 
             win.mergeFileItems()
 
             assert mock_merge.called
-            assert mock_opt.called
             assert mock_view.called
 
 

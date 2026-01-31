@@ -62,7 +62,7 @@ def mock_tqdm():
 # ---------------------------------------------------------
 
 def test_convert_image_to_pdf_success(fake_image, mock_img2pdf):
-    pdf_path = pdf_utils.convert_image_to_pdf(str(fake_image))
+    pdf_path = pdf_utils.convert_image_to_pdf(str(fake_image), jpeg_quality=80)
 
     assert os.path.exists(pdf_path)
     assert pdf_path.endswith(".pdf")
