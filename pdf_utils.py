@@ -8,6 +8,13 @@ import shutil
 from tqdm import tqdm
 import logging
 
+COMPRESSION_MAP = {
+    "highest": "screen",    # smallest file
+    "high":    "ebook",     # strong compression
+    "medium":  "printer",   # balanced
+    "low":     "prepress",  # minimal compression
+}
+
 
 def convert_image_to_pdf(path, jpeg_quality):
     """
@@ -148,11 +155,13 @@ def merge_files(file_paths, output_file, jpeg_quality=80):
             except:
                 pass
 
-def merge_and_optimize(file_paths, output_file, jpeg_quality=80, optimize_quality=None):
+def merge_and_optimize(file_paths, output_file, jpeg_quality=80, compression_level=None):
     """
     Merge multiple PDF and image files into a single PDF.
     Optionally optimize the final PDF using Ghostscript.
     """
+
+    logging.debug(f"Starting merge of {len(file_paths)} files into {output_file}, jpeg_quality={jpeg_quality}, compression_level={compression_level}")
 
     # Create a temporary file for the merged PDF
     fd, temp_merged_pdf = tempfile.mkstemp(suffix=".pdf")
@@ -163,9 +172,10 @@ def merge_and_optimize(file_paths, output_file, jpeg_quality=80, optimize_qualit
         merge_files(file_paths, temp_merged_pdf, jpeg_quality=jpeg_quality)
 
         # Optimize if requested
-        if optimize_quality:
-            optimize_pdf_with_ghostscript(temp_merged_pdf, output_file, quality=optimize_quality)
+        if compression_level and compression_level.lower() in COMPRESSION_MAP:
+            optimize_pdf_with_ghostscript(temp_merged_pdf, output_file, quality=COMPRESSION_MAP[compression_level.lower()])
         else:
+            logging.warning("No optimization quality specified or invalid quality. Skipping optimization.")
             shutil.move(temp_merged_pdf, output_file)
 
         logging.info(f"Merged PDF created at: {output_file}")

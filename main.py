@@ -3,9 +3,10 @@ import os
 import subprocess
 import logging
 from pdf_utils import merge_and_optimize
+from merge_pdf_dialog import MergePDFDialog
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox,
-    QFileDialog
+    QFileDialog, QDialog
 )
 from file_item_list_widget import FileItemListWidget
 
@@ -111,12 +112,24 @@ class MainWindow(QWidget):
     # Merge files
     # ---------------------------------------------------------
     def mergeFileItems(self):
+
+        # --- Retrieve and check input file list ---
         file_paths = self.list.getAllFilePaths()
         
         if not file_paths:
             QMessageBox.warning(self, "No Files", "No files added.")
             return
 
+        # --- Ask for compression settings ---
+        dlg = MergePDFDialog(self)
+        if dlg.exec() != QDialog.Accepted:
+            return
+
+        settings = dlg.getValues()
+        compression = settings["compression"]
+        jpeg_quality = settings["jpeg_quality"]
+
+        # --- Ask for output file ---
         output_file, _ = QFileDialog.getSaveFileName(
             self,
             "Save Merged PDF",
@@ -126,11 +139,16 @@ class MainWindow(QWidget):
         if not output_file:
             return
 
-        # Perform merging and optimization
-        merge_and_optimize(file_paths, output_file)
-        
-        # Open the resulting file
+        # Pass settings to your merge function
+        merge_and_optimize(
+            file_paths,
+            output_file,
+            compression_level=compression,
+            jpeg_quality=jpeg_quality
+        )
+
         self.viewFile(output_file)
+
 
 # ---------------------------------------------------------
 #  Run App

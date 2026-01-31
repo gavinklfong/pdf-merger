@@ -6,13 +6,6 @@ import logging
 from pdf_utils import merge_and_optimize
 
 
-COMPRESSION_MAP = {
-    "highest": "screen",    # smallest file
-    "high":    "ebook",     # strong compression
-    "medium":  "printer",   # balanced
-    "low":     "prepress",  # minimal compression
-}
-
 logging.basicConfig( 
     level=logging.INFO, 
     format="[%(levelname)s] %(message)s" )
@@ -63,11 +56,8 @@ def main():
         print(f"Error: Output directory does not exist: {out_dir}")
         return
 
-    # Resolve Ghostscript quality setting
-    gs_quality = COMPRESSION_MAP[args.compression]
-
     # Perform merging and optimization
-    merge_and_optimize(args.input, args.output, gs_quality)
+    merge_and_optimize(args.input, args.output, args.compression)
 
 
 if __name__ == "__main__":
