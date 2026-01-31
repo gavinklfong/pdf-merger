@@ -1,6 +1,6 @@
 import os
 import logging
-from PySide6.QtWidgets import ( QListWidget, QListWidgetItem)
+from PySide6.QtWidgets import ( QListWidget, QListWidgetItem, QLabel)
 from PySide6.QtCore import Qt
 from file_item_widget import FileItemWidget
 from file_utils import sort_files_by_date
@@ -13,6 +13,7 @@ from file_utils import sort_files_by_date
 #   - drop indicator
 #   - hover highlight
 # ---------------------------------------------------------
+
 class FileItemListWidget(QListWidget):
 
     def __init__(self, parent=None):
@@ -30,6 +31,22 @@ class FileItemListWidget(QListWidget):
         # Drop indicator
         self.setDropIndicatorShown(True)
 
+        # --- Empty state label ---
+        self.emptyLabel = QLabel("Drag PDF / image files here", self)
+        self.emptyLabel.setAlignment(Qt.AlignCenter)
+        self.emptyLabel.setStyleSheet("""
+                                        color: #888;
+                                        font-size: 20px;
+                                        font-style: italic;
+                                    """)
+        self.emptyLabel.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self._updateEmptyLabel()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        if self.emptyLabel:
+            self.emptyLabel.resize(self.size())
+
     def addFileItem(self, path):
         
         widget = FileItemWidget(path)
@@ -45,6 +62,7 @@ class FileItemListWidget(QListWidget):
         widget.deleteRequested.connect(lambda w=widget: self.removeFileItem(w))
 
         self._adjustWidthToContents()
+        self._updateEmptyLabel()
 
     def removeFileItem(self, widget):
         row = self._rowOfWidget(widget)
@@ -55,6 +73,7 @@ class FileItemListWidget(QListWidget):
             self.takeItem(row)            
 
         widget.deleteLater()
+        self._updateEmptyLabel()
 
     def viewFileItem(self, widget):
         self.viewFile(widget.filePath)
@@ -76,6 +95,7 @@ class FileItemListWidget(QListWidget):
             if widget:
                 widget.deleteLater()
             self.takeItem(0)
+        self._updateEmptyLabel()
 
     def sortFilesByDate(self, ascending):
         file_paths = self.getAllFilePaths()
@@ -107,6 +127,9 @@ class FileItemListWidget(QListWidget):
                 return i
         return -1
     
+    def _updateEmptyLabel(self):
+        self.emptyLabel.setVisible(self.count() == 0)
+
 
     # -----------------------------------------------------
     #  External file drop support
