@@ -129,3 +129,31 @@ def merge_files(file_paths, output_file):
                 os.remove(tmp)
             except:
                 pass
+
+
+def merge_and_optimize(file_paths, output_file, optimize_quality=None):
+    """
+    Merge multiple PDF and image files into a single PDF.
+    Optionally optimize the final PDF using Ghostscript.
+    """
+
+    # Create a temporary file for the merged PDF
+    fd, temp_merged_pdf = tempfile.mkstemp(suffix=".pdf")
+    os.close(fd)
+
+    try:
+        # Merge files into the temporary PDF
+        merge_files(file_paths, temp_merged_pdf)
+
+        # Optimize if requested
+        if optimize_quality:
+            optimize_pdf_with_ghostscript(temp_merged_pdf, output_file, quality=optimize_quality)
+        else:
+            shutil.move(temp_merged_pdf, output_file)
+
+        logging.info(f"Merged PDF created at: {output_file}")
+
+    finally:
+        # Cleanup temporary merged PDF if it still exists
+        if os.path.exists(temp_merged_pdf):
+            os.remove(temp_merged_pdf)

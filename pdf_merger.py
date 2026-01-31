@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import tempfile
 import logging
-from pdf_utils import merge_files, optimize_pdf_with_ghostscript
+from pdf_utils import merge_and_optimize
 
 
 COMPRESSION_MAP = {
@@ -63,27 +62,12 @@ def main():
         print(f"Error: Output directory does not exist: {out_dir}")
         return
 
-    # Create a temporary PDF file for output
-    fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
-    os.close(fd)
+    # Resolve Ghostscript quality setting
+    gs_quality = COMPRESSION_MAP[args.compression]
 
-    try:
-        logging.info("Generating merged pdf")
-        merge_files(args.input, temp_pdf)
-        
-        # Optimize the merged PDF
-        gs_quality = COMPRESSION_MAP[args.compression]
-        logging.info("Optimizing output pdf")
-        optimize_pdf_with_ghostscript(temp_pdf, args.output, quality=gs_quality)
-
-    finally:
-        # Cleanup temporary files
-        try:
-            os.remove(temp_pdf)
-        except:
-            pass
-
-
+    # Perform merging and optimization
+    merge_and_optimize(args.input, args.output, gs_quality)
+    
 
 if __name__ == "__main__":
     main()
