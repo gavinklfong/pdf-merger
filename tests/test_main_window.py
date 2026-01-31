@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from PySide6.QtWidgets import QPushButton
+from PySide6.QtWidgets import QDialog
 from main import MainWindow
 import sys
 import os
@@ -43,7 +43,6 @@ def test_merge_no_files_shows_warning(qtbot):
         win.mergeFileItems()
         mock_warning.assert_called_once()
 
-
 def test_merge_with_files_calls_merge_and_optimize(qtbot, tmp_path):
     win = MainWindow()
     qtbot.addWidget(win)
@@ -57,16 +56,28 @@ def test_merge_with_files_calls_merge_and_optimize(qtbot, tmp_path):
     win.list.addFileItem(str(f1))
     win.list.addFileItem(str(f2))
 
-    # Mock file dialog
-    with patch("main.QFileDialog.getSaveFileName", return_value=("output.pdf", None)):
-        # Mock merge + optimize
-        with patch("main.merge_and_optimize") as mock_merge, \
-             patch.object(win, "viewFile") as mock_view:
+    # --- Mock MergePDFDialog ---
+    mock_dialog = MagicMock()
+    mock_dialog.exec.return_value = QDialog.Accepted
+    mock_dialog.getValues.return_value = {
+        "compression": "Medium",
+        "jpeg_quality": 80,
+    }
 
-            win.mergeFileItems()
+    # Mock compression and file dialog
+    with patch("main.MergePDFDialog", return_value=mock_dialog), \
+         patch("main.QFileDialog.getSaveFileName", return_value=("output.pdf", None)):
+            # Mock merge + optimize
+            with patch("main.merge_and_optimize") as mock_merge, \
+                 patch.object(win, "viewFile") as mock_view:
 
-            assert mock_merge.called
-            assert mock_view.called
+                win.mergeFileItems()
+
+                mock_dialog.exec.assert_called_once()
+                mock_dialog.getValues.assert_called_once()
+                assert mock_merge.called
+                assert mock_view.called
+
 
 
 def test_view_file_calls_correct_os_command(qtbot, tmp_path):
