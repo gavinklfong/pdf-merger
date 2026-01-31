@@ -118,19 +118,6 @@ class MainWindow(QWidget):
         size.moveCenter(screen.center())
         self.move(size.topLeft())
 
-    # def showAboutDialog(self):
-    #         QMessageBox.information(
-    #         self,
-    #         "About PDF Merger",
-    #         (
-    #             "PDF Merger\n\nA simple tool to merge and compress PDF files.\n\n",
-    #             "This application uses PySide6 (Qt for Python),\n"
-    #             "licensed under the LGPL v3.\n\n"
-    #         ),
-    #         QMessageBox.Close
-    #         )
-
-
     def showAboutDialog(self):
         QMessageBox.information(
             self,
@@ -140,9 +127,12 @@ class MainWindow(QWidget):
                 "A simple tool to merge and compress PDF files.\n\n"
                 "This application uses PySide6 (Qt for Python),\n"
                 "licensed under the LGPL v3.\n\n"
+                "Full source code available at:\n"
+                "https://github.com/gavinklfong/pdf-merger\n"
             ),
             QMessageBox.Close
         )
+
 
     # ---------------------------------------------------------
     # External viewer
