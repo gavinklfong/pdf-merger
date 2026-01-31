@@ -6,9 +6,9 @@ from pdf_utils import merge_and_optimize
 from merge_pdf_dialog import MergePDFDialog
 from PySide6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox,
-    QFileDialog, QDialog
+    QFileDialog, QDialog, QMenuBar
 )
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtGui import QGuiApplication, QAction
 from file_item_list_widget import FileItemListWidget
 
 
@@ -23,15 +23,24 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.sortAscending = False
-
         self.setWindowTitle("PDF Merger")
-        self.list = FileItemListWidget()
-        self.list.viewFile = self.viewFile  # Override viewFile method
 
         layout = QVBoxLayout(self)
+
+        # Menu bar
+        menuBar = QMenuBar(self)
+        aboutAction = QAction("About", self)
+        aboutAction.triggered.connect(self.showAboutDialog)
+        menuBar.addAction(aboutAction)
+        layout.setMenuBar(menuBar)
+
+        # File item list
+        self.sortAscending = False
+        self.list = FileItemListWidget()
+        self.list.viewFile = self.viewFile  # Override viewFile method
         layout.addWidget(self.list)
 
+        # Buttons
         mergeFileButton = QPushButton("Merge Files")
         mergeFileButton.clicked.connect(self.mergeFileItems)
         mergeFileButton.setStyleSheet("""
@@ -46,7 +55,6 @@ class MainWindow(QWidget):
                 background-color: #3e8e41;      /* deeper green when pressed */
             }
         """)
-
 
         sortFileButton = QPushButton("Sort Files by Date")
         sortFileButton.clicked.connect(self.toggleSort)
@@ -63,7 +71,6 @@ class MainWindow(QWidget):
             }
         """)
 
-
         clearButton = QPushButton("Clear All Items")
         clearButton.clicked.connect(self.list.removeAllFileItems)
         clearButton.setStyleSheet("""
@@ -79,11 +86,28 @@ class MainWindow(QWidget):
             }
         """)
 
+
+        quitButton = QPushButton("Quit")
+        quitButton.clicked.connect(self.close)
+        quitButton.setStyleSheet("""
+            QPushButton {
+                background-color: #7f8c8d;      /* neutral grey */
+                color: white;
+            }
+            QPushButton:hover {
+                background-color: #707b7c;
+            }
+            QPushButton:pressed {
+                background-color: #616a6b;
+            }
+        """)
+
         buttonLayout = QHBoxLayout()
         buttonLayout.addWidget(sortFileButton)
         buttonLayout.addWidget(mergeFileButton)
         buttonLayout.addStretch()
         buttonLayout.addWidget(clearButton)
+        buttonLayout.addWidget(quitButton)
 
         layout.addLayout(buttonLayout)
 
@@ -93,6 +117,15 @@ class MainWindow(QWidget):
         size = self.frameGeometry()
         size.moveCenter(screen.center())
         self.move(size.topLeft())
+
+    def showAboutDialog(self):
+        QMessageBox.information(
+            self,
+            "About PDF Merger",
+            "PDF Merger\n\nA simple tool to merge and compress PDF files.",
+            QMessageBox.Close
+        )
+
 
     # ---------------------------------------------------------
     # External viewer
