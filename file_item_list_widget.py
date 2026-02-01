@@ -1,7 +1,7 @@
 import os
 import logging
 from PySide6.QtWidgets import ( QListWidget, QListWidgetItem, QLabel)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import (Qt, Signal)
 from file_item_widget import FileItemWidget
 from file_utils import sort_files_by_date
 
@@ -15,6 +15,8 @@ from file_utils import sort_files_by_date
 # ---------------------------------------------------------
 
 class FileItemListWidget(QListWidget):
+
+    itemsChanged = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -61,6 +63,7 @@ class FileItemListWidget(QListWidget):
         widget.viewRequested.connect(lambda w=widget: self.viewFileItem(w)) 
         widget.deleteRequested.connect(lambda w=widget: self.removeFileItem(w))
 
+        self.itemsChanged.emit()
         self._adjustWidthToContents()
         self._updateEmptyLabel()
 
@@ -73,6 +76,8 @@ class FileItemListWidget(QListWidget):
             self.takeItem(row)            
 
         widget.deleteLater()
+
+        self.itemsChanged.emit()
         self._updateEmptyLabel()
 
     def viewFileItem(self, widget):
@@ -95,6 +100,8 @@ class FileItemListWidget(QListWidget):
             if widget:
                 widget.deleteLater()
             self.takeItem(0)
+
+        self.itemsChanged.emit()
         self._updateEmptyLabel()
 
     def sortFilesByDate(self, ascending):
@@ -104,7 +111,7 @@ class FileItemListWidget(QListWidget):
         self.removeAllFileItems()
         for path in sorted_paths:
             self.addFileItem(path)
-
+        
 
     def _adjustWidthToContents(self):
         max_width = 0
