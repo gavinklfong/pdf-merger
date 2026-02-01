@@ -175,7 +175,7 @@ def test_optimize_pdf_ghostscript_failure(fake_pdf, tmp_path):
 # ---------------------------------------------------------
 
 def test_count_total_pages(fake_pdf, fake_image, mock_pdfreader):
-    total = pdf_utils._count_total_pages([str(fake_pdf), str(fake_pdf), str(fake_image)])
+    total = pdf_utils.count_total_pages([str(fake_pdf), str(fake_pdf), str(fake_image)])
     assert total == 3 + 3 + 1
 
 

@@ -2,7 +2,8 @@
 import argparse
 import os
 import logging
-from pdf_utils import merge_and_optimize
+from tqdm import tqdm
+from pdf_utils import count_total_pages, merge_and_optimize
 
 
 logging.basicConfig( 
@@ -63,9 +64,20 @@ def main():
     if out_dir and not os.path.isdir(out_dir):
         print(f"Error: Output directory does not exist: {out_dir}")
         return
+    
+    # Setup progress bar
+    total_pages = count_total_pages(args.input)
+    pbar = tqdm(total=total_pages, desc="Starting", unit="page")
+
+    def progress_callback(event):
+        if ("pages_done" in event):
+            pbar.n = event["pages_done"]
+        if ("message" in event):
+            pbar.desc = event["message"][:40] # tqdm truncates long text anyway
+        pbar.refresh()
 
     # Perform merging and optimization
-    merge_and_optimize(args.input, args.output, args.jpeg_quality, args.compression)
+    merge_and_optimize(args.input, args.output, args.jpeg_quality, args.compression, progress_callback)
     
 
 if __name__ == "__main__":

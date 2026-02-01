@@ -6,7 +6,6 @@ from PIL import Image, ImageOps, UnidentifiedImageError
 from pypdf import PdfReader, PdfWriter
 import subprocess
 import shutil
-from tqdm import tqdm
 import logging
 
 COMPRESSION_MAP = {
@@ -129,7 +128,7 @@ def optimize_pdf_with_ghostscript(input_pdf, output_pdf, quality="printer"):
         logging.error(f"Reason: {e}")
         shutil.copyfile(input_pdf, output_pdf)
 
-def _count_total_pages(file_paths):
+def count_total_pages(file_paths):
     total_pages = 0 
     for path in file_paths: 
         if path.lower().endswith(".pdf"): 
@@ -140,28 +139,40 @@ def _count_total_pages(file_paths):
     return total_pages
 
 
-def merge_files(file_paths, output_file, jpeg_quality=80):
+def merge_files(file_paths, output_file, jpeg_quality=80, progress_callback=None):
+    """
+    progress_callback(event_dict):
+        event_dict = {
+            "pages_done": int,
+            "message": str
+        }
+    """
     writer = PdfWriter()
     temp_files = []
 
-    total_pages = _count_total_pages(file_paths)
-    logging.info(f"Merging a total of {total_pages} pages from {len(file_paths)} files.")
-    pbar = tqdm(total=total_pages, desc="Merging pages", unit="page")
+    total_pages = count_total_pages(file_paths)
+    pages_done = 0
+
+    if progress_callback is None:
+        progress_callback = lambda event: None
 
     try:
-        # Process each file
         for path in file_paths:
             ext = os.path.splitext(path)[1].lower()
 
-            # Handle PDF files
+            # PDF
             if ext == ".pdf":
                 reader = PdfReader(path)
                 for page in reader.pages:
                     writer.add_page(page)
-                    pbar.update(1)
+                    pages_done += 1
+                    progress_callback({
+                        "pages_done": pages_done,
+                        "message": f"Added page from {os.path.basename(path)}"
+                    })
                 continue
 
-            # Handle image files
+            # Image
             if ext in [".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".webp"]:
                 temp_pdf = convert_image_to_pdf(path, jpeg_quality)
                 temp_files.append(temp_pdf)
@@ -169,28 +180,38 @@ def merge_files(file_paths, output_file, jpeg_quality=80):
                 reader = PdfReader(temp_pdf)
                 for page in reader.pages:
                     writer.add_page(page)
-                    pbar.update(1)
+                    pages_done += 1
+                    progress_callback({
+                        "pages_done": pages_done,
+                        "message": f"Converted and added image {os.path.basename(path)}"
+                    })
                 continue
 
             logging.warning(f"Skipping unsupported file: {path}")
 
-        pbar.close()
-
         writer.write(output_file)
 
+        progress_callback({
+            "pages_done": pages_done,
+            "message": "Merge complete"
+        })
+
     finally:
-        # Cleanup temporary files
         for tmp in temp_files:
             try:
                 os.remove(tmp)
             except:
                 pass
 
-def merge_and_optimize(file_paths, output_file, jpeg_quality=80, compression_level=None):
+
+def merge_and_optimize(file_paths, output_file, jpeg_quality=80, compression_level=None, progress_callback=None):
     """
     Merge multiple PDF and image files into a single PDF.
     Optionally optimize the final PDF using Ghostscript.
     """
+
+    if progress_callback is None:
+        progress_callback = lambda event: None
 
     logging.debug(f"Starting merge of {len(file_paths)} files into {output_file}, jpeg_quality={jpeg_quality}, compression_level={compression_level}")
 
@@ -200,16 +221,21 @@ def merge_and_optimize(file_paths, output_file, jpeg_quality=80, compression_lev
 
     try:
         # Merge files into the temporary PDF
-        merge_files(file_paths, temp_merged_pdf, jpeg_quality=jpeg_quality)
+        merge_files(file_paths, temp_merged_pdf, jpeg_quality=jpeg_quality, progress_callback=progress_callback)
 
         # Optimize if requested
         if compression_level and compression_level.lower() in COMPRESSION_MAP:
+            progress_callback({
+                "message": "Optimizing merged PDF"
+            })
             optimize_pdf_with_ghostscript(temp_merged_pdf, output_file, quality=COMPRESSION_MAP[compression_level.lower()])
         else:
             logging.warning("No optimization quality specified or invalid quality. Skipping optimization.")
             shutil.move(temp_merged_pdf, output_file)
 
-        logging.info(f"Merged PDF created at: {output_file}")
+        progress_callback({
+            "message": "Completed"
+        })
 
     finally:
         # Cleanup temporary merged PDF if it still exists
