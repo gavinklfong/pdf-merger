@@ -1,7 +1,8 @@
 import os
 import tempfile
 import img2pdf
-from PIL import Image
+import mimetypes
+from PIL import Image, ImageOps, UnidentifiedImageError
 from pypdf import PdfReader, PdfWriter
 import subprocess
 import shutil
@@ -16,37 +17,67 @@ COMPRESSION_MAP = {
 }
 
 
-def convert_image_to_pdf(path, jpeg_quality):
-    """
-    Converts an image (PNG/JPG/etc.) to a temporary PDF file.
-    Returns the path to the temporary PDF.
-    """
+class ImageConversionError(Exception):
+    pass
 
-    ext = os.path.splitext(path)[1].lower()
+def validate_mime_type(path):
+
+    mime, _ = mimetypes.guess_type(path)
+
+    if not mime or not mime.startswith("image/"):
+        raise ImageConversionError(
+            f"Invalid MIME type for '{path}'. Expected an image, got '{mime}'."
+        )
+
+def convert_image_to_pdf(path, jpeg_quality):
     temp_jpg = None
 
     try:
-        # STEP 1 — Convert PNG → JPG
-        if ext == ".png":
-            img = Image.open(path).convert("RGB")
+        # STEP 0 — Validate MIME type
+        validate_mime_type(path)
+
+        # STEP 1 — Load image safely
+        try:
+            img = Image.open(path)
+            img.load()
+        except (UnidentifiedImageError, OSError) as e:
+            raise ImageConversionError(f"Cannot read image '{path}': {e}")
+
+        # STEP 2 — Apply EXIF orientation (critical for portrait images)
+        try:
+            img = ImageOps.exif_transpose(img)
+        except Exception as e:
+            raise ImageConversionError(f"Failed to apply EXIF orientation: {e}")
+
+        # STEP 3 — Convert to RGB for JPEG
+        try:
+            img = img.convert("RGB")
+        except Exception as e:
+            raise ImageConversionError(f"Failed to convert image to RGB: {e}")
+
+        # STEP 4 — Save as JPEG with quality
+        try:
             fd, temp_jpg = tempfile.mkstemp(suffix=".jpg")
             os.close(fd)
             img.save(temp_jpg, "JPEG", quality=jpeg_quality)
-            image_to_convert = temp_jpg
-        else:
-            image_to_convert = path
+        except Exception as e:
+            raise ImageConversionError(f"Failed to save temporary JPEG: {e}")
 
-        # STEP 2 — Convert JPG → PDF
-        fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
-        os.close(fd)
+        # STEP 5 — Convert JPEG → PDF
+        try:
+            fd, temp_pdf = tempfile.mkstemp(suffix=".pdf")
+            os.close(fd)
 
-        with open(temp_pdf, "wb") as f:
-            f.write(img2pdf.convert(image_to_convert))
+            with open(temp_pdf, "wb") as f:
+                f.write(img2pdf.convert(temp_jpg))
+
+        except Exception as e:
+            raise ImageConversionError(f"Failed to convert JPEG to PDF: {e}")
 
         return temp_pdf
 
     finally:
-        # Cleanup temporary jpg file 
+        if temp_jpg:
             try:
                 os.remove(temp_jpg)
             except:
