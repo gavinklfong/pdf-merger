@@ -127,7 +127,7 @@ def test_handle_dropped_file(qtbot, tmp_path):
     f = tmp_path / "drop_test.pdf"
     f.write_text("x")
 
-    widget.handleDroppedFile(str(f))
+    widget._handleDroppedFile(str(f))
 
     assert widget.count() == 1
     assert widget.getAllFilePaths() == [str(f)]

@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import patch, MagicMock
 from PySide6.QtWidgets import QDialog
+from PySide6.QtCore import Signal, QObject
 from main import MainWindow
 import sys
 import os
@@ -47,7 +48,7 @@ def test_merge_with_files_calls_merge_and_optimize(qtbot, tmp_path):
     win = MainWindow()
     qtbot.addWidget(win)
 
-    # Add fake files
+    # Create fake input files
     f1 = tmp_path / "a.pdf"
     f2 = tmp_path / "b.pdf"
     f1.write_text("x")
@@ -56,7 +57,7 @@ def test_merge_with_files_calls_merge_and_optimize(qtbot, tmp_path):
     win.list.addFileItem(str(f1))
     win.list.addFileItem(str(f2))
 
-    # --- Mock MergePDFDialog ---
+    # Mock dialog
     mock_dialog = MagicMock()
     mock_dialog.exec.return_value = QDialog.Accepted
     mock_dialog.getValues.return_value = {
@@ -64,21 +65,32 @@ def test_merge_with_files_calls_merge_and_optimize(qtbot, tmp_path):
         "jpeg_quality": 80,
     }
 
-    # Mock compression and file dialog
+    # --- Fake worker to avoid real threading ---
+    class FakeWorker(QObject):
+        progress = Signal(dict)
+        finished = Signal()
+
+        def __init__(self, *args, **kwargs):
+            super().__init__()
+
+        def run(self):
+            # Simulate merge finishing instantly
+            self.progress.emit({"message": "done"})
+            self.finished.emit()
+
     with patch("main.MergePDFDialog", return_value=mock_dialog), \
-         patch("main.QFileDialog.getSaveFileName", return_value=("output.pdf", None)):
-            # Mock merge + optimize
-            with patch("main.merge_and_optimize") as mock_merge, \
-                 patch.object(win, "viewFile") as mock_view:
+         patch("main.QFileDialog.getSaveFileName", return_value=("output.pdf", None)), \
+         patch("main.MergeWorker", FakeWorker), \
+         patch.object(win, "viewFile") as mock_view:
 
-                win.mergeFileItems()
+        win.mergeFileItems()
 
-                mock_dialog.exec.assert_called_once()
-                mock_dialog.getValues.assert_called_once()
-                assert mock_merge.called
-                assert mock_view.called
+        # Allow Qt event loop to process signals
+        qtbot.waitUntil(lambda: mock_view.called, timeout=1000)
 
-
+        mock_dialog.exec.assert_called_once()
+        mock_dialog.getValues.assert_called_once()
+        mock_view.assert_called_once_with("output.pdf")
 
 def test_view_file_calls_correct_os_command(qtbot, tmp_path):
     win = MainWindow()

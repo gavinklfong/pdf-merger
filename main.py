@@ -1,14 +1,35 @@
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QMessageBox, QFileDialog, QDialog, QMenuBar
+    QPushButton, QMessageBox, QFileDialog, QDialog
 )
 from PySide6.QtGui import QGuiApplication, QAction
-import sys, os, subprocess, logging
+from PySide6.QtCore import Signal, QObject, QThread, Slot
+import sys, os, subprocess
 
 from pdf_utils import merge_and_optimize
 from merge_pdf_dialog import MergePDFDialog
 from file_item_list_widget import FileItemListWidget
 
+class MergeWorker(QObject):
+    progress = Signal(dict)
+    finished = Signal()
+
+    def __init__(self, file_paths, output_file, jpeg_quality, compression):
+        super().__init__()
+        self.file_paths = file_paths
+        self.output_file = output_file
+        self.jpeg_quality = jpeg_quality
+        self.compression = compression
+
+    def run(self):
+        merge_and_optimize(
+            self.file_paths,
+            self.output_file,
+            jpeg_quality=self.jpeg_quality,
+            compression_level=self.compression,
+            progress_callback=self.progress.emit
+        )
+        self.finished.emit()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -120,6 +141,24 @@ class MainWindow(QMainWindow):
         count = len(self.list.getAllFilePaths())
         self.status.showMessage(f"{count} item(s)")
 
+    @Slot(dict)
+    def on_merge_progress(self, event):
+        msg = event.get("message", "")
+        pages = event.get("pages_done")
+
+        if pages is not None:
+            self.statusBar().showMessage(f"{msg}  (pages: {pages})")
+        else:
+            self.statusBar().showMessage(msg)
+
+    @Slot()
+    def on_merge_finished(self):
+        self.statusBar().showMessage(f"Merge completed successfully: {self._current_output_file}")
+
+        # Now open the file
+        if hasattr(self, "_current_output_file"):
+            self.viewFile(self._current_output_file)
+
     # ---------------------------------------------------------
     # About dialog
     # ---------------------------------------------------------
@@ -185,15 +224,30 @@ class MainWindow(QMainWindow):
         )
         if not output_file:
             return
+        
+        # Keep reference to output file for later viewing
+        self._current_output_file = output_file
 
-        merge_and_optimize(
+        self.worker = MergeWorker(
             file_paths,
             output_file,
-            compression_level=compression,
-            jpeg_quality=jpeg_quality
+            jpeg_quality,
+            compression
         )
 
-        self.viewFile(output_file)
+        self.thread = QThread()
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run)
+        self.worker.progress.connect(self.on_merge_progress)
+        self.worker.finished.connect(self.on_merge_finished)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.start()
+        self.statusBar().showMessage("Starting merge…")
+
 
 # ---------------------------------------------------------
 #  Run App
@@ -205,3 +259,5 @@ if __name__ == "__main__":
     w.resize(800, 400)
     w.show()
     app.exec()
+
+
