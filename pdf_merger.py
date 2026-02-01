@@ -5,13 +5,6 @@ import logging
 from pdf_utils import merge_and_optimize
 
 
-COMPRESSION_MAP = {
-    "highest": "screen",    # smallest file
-    "high":    "ebook",     # strong compression
-    "medium":  "printer",   # balanced
-    "low":     "prepress",  # minimal compression
-}
-
 logging.basicConfig( 
     level=logging.INFO, 
     format="[%(levelname)s] %(message)s" )
@@ -42,6 +35,15 @@ def parse_args():
         help="Compression quality for Ghostscript optimization (default: medium)"
     )
 
+    parser.add_argument(
+        "-j", "--jpeg-quality",
+        type=int,
+        choices=range(1, 100),
+        metavar="1-100",
+        default=80,
+        help="JPEG quality for image recompression inside the PDF (1-100, default: 80)"
+    )
+
     return parser.parse_args()
 
 
@@ -62,11 +64,8 @@ def main():
         print(f"Error: Output directory does not exist: {out_dir}")
         return
 
-    # Resolve Ghostscript quality setting
-    gs_quality = COMPRESSION_MAP[args.compression]
-
     # Perform merging and optimization
-    merge_and_optimize(args.input, args.output, gs_quality)
+    merge_and_optimize(args.input, args.output, args.jpeg_quality, args.compression)
     
 
 if __name__ == "__main__":

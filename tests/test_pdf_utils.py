@@ -10,19 +10,42 @@ import pdf_utils
 # Fixtures
 # ---------------------------------------------------------
 
+import os
+import pytest
+from PIL import Image
+import pdf_utils
+
+
+@pytest.fixture
+def fake_image(tmp_path):
+    """Create a real temporary JPEG image."""
+    path = tmp_path / "image.jpg"
+    img = Image.new("RGB", (20, 20), color="white")
+    img.save(path, "JPEG")
+    return path
+
+
+@pytest.fixture
+def fake_corrupted_image(tmp_path):
+    """Create a corrupted image file."""
+    path = tmp_path / "corrupted.jpg"
+    path.write_bytes(b"NOT_A_REAL_IMAGE")
+    return path
+
+
+@pytest.fixture
+def fake_non_image(tmp_path):
+    """Create a non-image file."""
+    path = tmp_path / "file.txt"
+    path.write_text("hello world")
+    return path
+
+
 @pytest.fixture
 def fake_pdf(tmp_path):
     """Create a fake PDF file."""
     path = tmp_path / "file.pdf"
     path.write_bytes(b"%PDF-FAKE")
-    return path
-
-
-@pytest.fixture
-def fake_image(tmp_path):
-    """Create a fake image file."""
-    path = tmp_path / "image.jpg"
-    path.write_bytes(b"FAKEIMG")
     return path
 
 
@@ -62,20 +85,47 @@ def mock_tqdm():
 # ---------------------------------------------------------
 
 def test_convert_image_to_pdf_success(fake_image, mock_img2pdf):
-    pdf_path = pdf_utils.convert_image_to_pdf(str(fake_image))
+    pdf_path = pdf_utils.convert_image_to_pdf(str(fake_image), jpeg_quality=80)
 
+    # PDF exists
     assert os.path.exists(pdf_path)
     assert pdf_path.endswith(".pdf")
-    mock_img2pdf.assert_called_once_with(str(fake_image))
+
+    # img2pdf.convert was called once
+    mock_img2pdf.assert_called_once()
+
+    # Extract the argument passed to img2pdf.convert
+    temp_jpg_arg = mock_img2pdf.call_args[0][0]
+
+    # It must be a temp JPEG file
+    assert temp_jpg_arg.endswith(".jpg")
+
+    # The temp JPEG should be deleted by the function
+    assert not os.path.exists(temp_jpg_arg)
 
     os.remove(pdf_path)
 
 
-def test_convert_image_to_pdf_failure(fake_image):
-    with patch("img2pdf.convert", side_effect=Exception("fail")):
-        with pytest.raises(Exception):
-            pdf_utils.convert_image_to_pdf(str(fake_image))
+def test_convert_image_to_pdf_corrupted(fake_corrupted_image):
+    with pytest.raises(pdf_utils.ImageConversionError):
+        pdf_utils.convert_image_to_pdf(str(fake_corrupted_image), jpeg_quality=80)
 
+
+def test_convert_image_to_pdf_invalid_mime(fake_non_image):
+    with pytest.raises(pdf_utils.ImageConversionError):
+        pdf_utils.convert_image_to_pdf(str(fake_non_image), jpeg_quality=80)
+
+
+def test_temp_jpeg_cleanup(fake_image, mock_img2pdf):
+    pdf_path = pdf_utils.convert_image_to_pdf(str(fake_image), jpeg_quality=80)
+
+    # Extract temp JPEG path
+    temp_jpg_arg = mock_img2pdf.call_args[0][0]
+
+    # Ensure cleanup happened
+    assert not os.path.exists(temp_jpg_arg)
+
+    os.remove(pdf_path)
 
 # ---------------------------------------------------------
 # optimize_pdf_with_ghostscript
@@ -125,7 +175,7 @@ def test_optimize_pdf_ghostscript_failure(fake_pdf, tmp_path):
 # ---------------------------------------------------------
 
 def test_count_total_pages(fake_pdf, fake_image, mock_pdfreader):
-    total = pdf_utils.count_total_pages([str(fake_pdf), str(fake_pdf), str(fake_image)])
+    total = pdf_utils._count_total_pages([str(fake_pdf), str(fake_pdf), str(fake_image)])
     assert total == 3 + 3 + 1
 
 
@@ -148,3 +198,4 @@ def test_merge_files(fake_pdf, fake_image, mock_pdfreader, mock_pdfwriter, mock_
 
         # temp file cleanup
         mock_remove.assert_called_with("temp.pdf")
+
