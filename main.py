@@ -1,12 +1,12 @@
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
-    QPushButton, QMessageBox, QFileDialog, QDialog
+    QPushButton, QMessageBox, QFileDialog, QDialog, QProgressBar
 )
-from PySide6.QtGui import QGuiApplication, QAction
-from PySide6.QtCore import Signal, QObject, QThread, Slot
+from PySide6.QtGui import QGuiApplication, QAction, QCursor
+from PySide6.QtCore import Signal, QObject, QThread, Slot, Qt
 import sys, os, subprocess
 
-from pdf_utils import merge_and_optimize
+from pdf_utils import count_total_pages, merge_and_optimize
 from merge_pdf_dialog import MergePDFDialog
 from file_item_list_widget import FileItemListWidget
 
@@ -124,6 +124,13 @@ class MainWindow(QMainWindow):
         self.status = self.statusBar()
         self.status.showMessage("0 items")
 
+        self.progressBar = QProgressBar()
+        self.progressBar.setMinimum(0)
+        self.progressBar.setMaximum(0) 
+        self.progressBar.setVisible(False)
+
+        self.statusBar().addPermanentWidget(self.progressBar)
+
 
     # ---------------------------------------------------------
     # Center window
@@ -146,16 +153,30 @@ class MainWindow(QMainWindow):
         msg = event.get("message", "")
         pages = event.get("pages_done")
 
+        # Update status bar text
+        self.statusBar().showMessage(msg)
+
+        # Update progress bar
         if pages is not None:
-            self.statusBar().showMessage(f"{msg}  (pages: {pages})")
-        else:
-            self.statusBar().showMessage(msg)
+            # Switch from busy mode to determinate mode on first page update
+            if self.progressBar.maximum() == 0:
+                # You can compute total pages if you want, but if not:
+                # just show a growing bar with no max
+                self.progressBar.setMaximum(0)  # stays busy
+            else:
+                self.progressBar.setValue(pages)
 
     @Slot()
     def on_merge_finished(self):
-        self.statusBar().showMessage(f"Merge completed successfully: {self._current_output_file}")
 
-        # Now open the file
+        # Restore normal cursor 
+        QApplication.restoreOverrideCursor()
+
+        self.statusBar().showMessage(f"Merge completed successfully: {getattr(self, '_current_output_file', '')}")
+
+        self.progressBar.setVisible(False)
+        self.progressBar.setValue(0)
+
         if hasattr(self, "_current_output_file"):
             self.viewFile(self._current_output_file)
 
@@ -224,9 +245,14 @@ class MainWindow(QMainWindow):
         )
         if not output_file:
             return
-        
+
+        # Show busy cursor 
+        QApplication.setOverrideCursor(Qt.WaitCursor)
+
         # Keep reference to output file for later viewing
         self._current_output_file = output_file
+
+        total_pages = count_total_pages(file_paths)
 
         self.worker = MergeWorker(
             file_paths,
@@ -244,6 +270,12 @@ class MainWindow(QMainWindow):
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+
+
+        self.progressBar.setVisible(True) 
+        self.progressBar.setMinimum(0) 
+        self.progressBar.setMaximum(total_pages)
+        self.progressBar.setValue(0)
 
         self.thread.start()
         self.statusBar().showMessage("Starting merge…")
