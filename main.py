@@ -9,6 +9,7 @@ import sys, os, subprocess
 from pdf_utils import count_total_pages, merge_and_optimize
 from merge_pdf_dialog import MergePDFDialog
 from file_item_list_widget import FileItemListWidget
+from pathlib import Path
 
 class MergeWorker(QObject):
     progress = Signal(dict)
@@ -172,13 +173,28 @@ class MainWindow(QMainWindow):
         # Restore normal cursor 
         QApplication.restoreOverrideCursor()
 
-        self.statusBar().showMessage(f"Merge completed successfully: {getattr(self, '_current_output_file', '')}")
-
+        # Hide progress bar
         self.progressBar.setVisible(False)
         self.progressBar.setValue(0)
 
+        # Get output file size
+        output_file = getattr(self, "_current_output_file", "")
+
+        if output_file:
+            size_bytes = Path(output_file).stat().st_size
+            size_mb = size_bytes / (1024 * 1024)
+            size_str = f"{size_mb:.2f} MB"
+        else:
+            size_str = "0 bytes"
+
+        self.statusBar().showMessage(
+            f"Merge completed successfully: {output_file} ({size_str})"
+        )
+
+        # Open the merged PDF
         if hasattr(self, "_current_output_file"):
             self.viewFile(self._current_output_file)
+
 
     # ---------------------------------------------------------
     # About dialog
