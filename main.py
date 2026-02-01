@@ -37,8 +37,8 @@ class MainWindow(QMainWindow):
         # ---------------------------------------------------------
         self.sortAscending = False
         self.list = FileItemListWidget()
-        self.list.viewFile = self.viewFile
         self.list.itemsChanged.connect(self.updateStatusCount)
+        self.list.viewRequested.connect(lambda filePath: self.viewFile(filePath))
         layout.addWidget(self.list)
 
         # ---------------------------------------------------------

@@ -16,6 +16,7 @@ from file_utils import sort_files_by_date
 
 class FileItemListWidget(QListWidget):
 
+    viewRequested = Signal(str)
     itemsChanged = Signal()
 
     def __init__(self, parent=None):
@@ -82,10 +83,7 @@ class FileItemListWidget(QListWidget):
         self.itemsChanged.emit()
 
     def viewFileItem(self, widget):
-        self.viewFile(widget.filePath)
-
-    def viewFile(self, filename):
-        logging.debug("View:", filename)
+        self.viewRequested.emit(widget.filePath)
 
     def getAllFilePaths(self):
         paths = []
@@ -158,12 +156,12 @@ class FileItemListWidget(QListWidget):
             for url in event.mimeData().urls():
                 path = url.toLocalFile()
                 if path:
-                    self.handleDroppedFile(path)
+                    self._handleDroppedFile(path)
             event.acceptProposedAction()
         else:
             super().dropEvent(event)
 
     # This will be overridden by MainWindow
-    def handleDroppedFile(self, path):
+    def _handleDroppedFile(self, path):
         logging.debug("Dropped:", path)
         self.addFileItem(path)
