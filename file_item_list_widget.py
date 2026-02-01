@@ -42,7 +42,11 @@ class FileItemListWidget(QListWidget):
                                         font-style: italic;
                                     """)
         self.emptyLabel.setAttribute(Qt.WA_TransparentForMouseEvents)
-        self._updateEmptyLabel()
+
+        # Connect item change signal
+        self.itemsChanged.connect(self._updateEmptyLabel)
+        self.itemsChanged.connect(self._adjustWidthToContents)
+
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -64,8 +68,6 @@ class FileItemListWidget(QListWidget):
         widget.deleteRequested.connect(lambda w=widget: self.removeFileItem(w))
 
         self.itemsChanged.emit()
-        self._adjustWidthToContents()
-        self._updateEmptyLabel()
 
     def removeFileItem(self, widget):
         row = self._rowOfWidget(widget)
@@ -78,7 +80,6 @@ class FileItemListWidget(QListWidget):
         widget.deleteLater()
 
         self.itemsChanged.emit()
-        self._updateEmptyLabel()
 
     def viewFileItem(self, widget):
         self.viewFile(widget.filePath)
@@ -102,7 +103,6 @@ class FileItemListWidget(QListWidget):
             self.takeItem(0)
 
         self.itemsChanged.emit()
-        self._updateEmptyLabel()
 
     def sortFilesByDate(self, ascending):
         file_paths = self.getAllFilePaths()
