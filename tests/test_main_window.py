@@ -3,8 +3,17 @@ from unittest.mock import patch, MagicMock
 from PySide6.QtWidgets import QDialog
 from PySide6.QtCore import Signal, QObject
 from main import MainWindow
+from pypdf import PdfWriter
 import sys
 import os
+
+
+def make_pdf(path):
+    writer = PdfWriter()
+    writer.add_blank_page(width=72, height=72)
+    with open(path, "wb") as f:
+        writer.write(f)
+
 
 def test_window_initializes(qtbot):
     win = MainWindow()
@@ -22,8 +31,8 @@ def test_toggle_sort_calls_list_sort(qtbot, tmp_path):
     # Add two files
     f1 = tmp_path / "file_2020_01.pdf"
     f2 = tmp_path / "file_2021_02.pdf"
-    f1.write_text("x")
-    f2.write_text("y")
+    make_pdf(f1)
+    make_pdf(f2)
 
     win.list.addFileItem(str(f1))
     win.list.addFileItem(str(f2))
@@ -51,8 +60,8 @@ def test_merge_with_files_calls_merge_and_optimize(qtbot, tmp_path):
     # Create fake input files
     f1 = tmp_path / "a.pdf"
     f2 = tmp_path / "b.pdf"
-    f1.write_text("x")
-    f2.write_text("y")
+    make_pdf(f1)
+    make_pdf(f2)
 
     win.list.addFileItem(str(f1))
     win.list.addFileItem(str(f2))
@@ -78,10 +87,14 @@ def test_merge_with_files_calls_merge_and_optimize(qtbot, tmp_path):
             self.progress.emit({"message": "done"})
             self.finished.emit()
 
-    with patch("main.MergePDFDialog", return_value=mock_dialog), \
-         patch("main.QFileDialog.getSaveFileName", return_value=("output.pdf", None)), \
-         patch("main.MergeWorker", FakeWorker), \
-         patch.object(win, "viewFile") as mock_view:
+    with patch("main.count_total_pages", return_value=2), \
+        patch("main.Path") as MockPath, \
+        patch("main.PDFMergeDialog", return_value=mock_dialog), \
+        patch("main.QFileDialog.getSaveFileName", return_value=("output.pdf", None)), \
+        patch("main.PDFMergeWorker", FakeWorker), \
+        patch.object(win, "viewFile") as mock_view:
+
+        MockPath.return_value.stat.return_value.st_size = 1234
 
         win.mergeFileItems()
 

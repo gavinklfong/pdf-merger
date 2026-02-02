@@ -1,36 +1,18 @@
+import sys, os, subprocess
+from pathlib import Path
+
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QMessageBox, QFileDialog, QDialog, QProgressBar
 )
-from PySide6.QtGui import QGuiApplication, QAction, QCursor
-from PySide6.QtCore import Signal, QObject, QThread, Slot, Qt
-import sys, os, subprocess
+from PySide6.QtGui import QGuiApplication, QAction
+from PySide6.QtCore import QThread, Slot, Qt
 
-from pdf_utils import count_total_pages, merge_and_optimize
-from merge_pdf_dialog import MergePDFDialog
+from pdf_utils import count_total_pages
 from file_item_list_widget import FileItemListWidget
-from pathlib import Path
+from pdf_merge_dialog import PDFMergeDialog
+from pdf_merge_worker import PDFMergeWorker
 
-class MergeWorker(QObject):
-    progress = Signal(dict)
-    finished = Signal()
-
-    def __init__(self, file_paths, output_file, jpeg_quality, compression):
-        super().__init__()
-        self.file_paths = file_paths
-        self.output_file = output_file
-        self.jpeg_quality = jpeg_quality
-        self.compression = compression
-
-    def run(self):
-        merge_and_optimize(
-            self.file_paths,
-            self.output_file,
-            jpeg_quality=self.jpeg_quality,
-            compression_level=self.compression,
-            progress_callback=self.progress.emit
-        )
-        self.finished.emit()
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -149,8 +131,11 @@ class MainWindow(QMainWindow):
         count = len(self.list.getAllFilePaths())
         self.status.showMessage(f"{count} item(s)")
 
+    # ---------------------------------------------------------
+    # Merge progress handlers
+    # ---------------------------------------------------------
     @Slot(dict)
-    def on_merge_progress(self, event):
+    def onMergeProgress(self, event):
         msg = event.get("message", "")
         pages = event.get("pages_done")
 
@@ -168,7 +153,7 @@ class MainWindow(QMainWindow):
                 self.progressBar.setValue(pages)
 
     @Slot()
-    def on_merge_finished(self):
+    def onMergeFinished(self):
 
         # Restore normal cursor 
         QApplication.restoreOverrideCursor()
@@ -239,20 +224,23 @@ class MainWindow(QMainWindow):
     # Merge files
     # ---------------------------------------------------------
     def mergeFileItems(self):
-        file_paths = self.list.getAllFilePaths()
 
+        # Get file paths
+        file_paths = self.list.getAllFilePaths()
         if not file_paths:
             QMessageBox.warning(self, "No Files", "No files added.")
             return
 
-        dlg = MergePDFDialog(self)
-        if dlg.exec() != QDialog.Accepted:
+        # Get compression settings
+        pdf_merge_dialog = PDFMergeDialog(self)
+        if pdf_merge_dialog.exec() != QDialog.Accepted:
             return
 
-        settings = dlg.getValues()
+        settings = pdf_merge_dialog.getValues()
         compression = settings["compression"]
         jpeg_quality = settings["jpeg_quality"]
 
+        # Get output file path
         output_file, _ = QFileDialog.getSaveFileName(
             self,
             "Save Merged PDF",
@@ -268,9 +256,15 @@ class MainWindow(QMainWindow):
         # Keep reference to output file for later viewing
         self._current_output_file = output_file
 
+        # Setup progress bar
         total_pages = count_total_pages(file_paths)
+        self.progressBar.setVisible(True) 
+        self.progressBar.setMinimum(0) 
+        self.progressBar.setMaximum(total_pages)
+        self.progressBar.setValue(0)
 
-        self.worker = MergeWorker(
+        # Start worker thread
+        self.worker = PDFMergeWorker(
             file_paths,
             output_file,
             jpeg_quality,
@@ -281,17 +275,13 @@ class MainWindow(QMainWindow):
         self.worker.moveToThread(self.thread)
 
         self.thread.started.connect(self.worker.run)
-        self.worker.progress.connect(self.on_merge_progress)
-        self.worker.finished.connect(self.on_merge_finished)
+        self.thread.finished.connect(self.thread.deleteLater)
+        
+        self.worker.progress.connect(self.onMergeProgress)
+        self.worker.finished.connect(self.onMergeFinished)
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
-        self.thread.finished.connect(self.thread.deleteLater)
 
-
-        self.progressBar.setVisible(True) 
-        self.progressBar.setMinimum(0) 
-        self.progressBar.setMaximum(total_pages)
-        self.progressBar.setValue(0)
 
         self.thread.start()
         self.statusBar().showMessage("Starting merge…")

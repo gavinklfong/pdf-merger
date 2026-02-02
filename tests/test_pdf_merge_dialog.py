@@ -1,11 +1,11 @@
 import pytest
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog
-from merge_pdf_dialog import MergePDFDialog, COMPRESSION_LABELS
+from pdf_merge_dialog import PDFMergeDialog, COMPRESSION_LABELS
 
 
 def test_dialog_defaults(qtbot):
-    dlg = MergePDFDialog()
+    dlg = PDFMergeDialog()
     qtbot.addWidget(dlg)
 
     # Default compression slider value
@@ -18,7 +18,7 @@ def test_dialog_defaults(qtbot):
 
 
 def test_compression_slider_updates_label(qtbot):
-    dlg = MergePDFDialog()
+    dlg = PDFMergeDialog()
     qtbot.addWidget(dlg)
 
     # Move slider to "High" (index 2)
@@ -31,7 +31,7 @@ def test_compression_slider_updates_label(qtbot):
 
 
 def test_jpeg_slider_updates_label(qtbot):
-    dlg = MergePDFDialog()
+    dlg = PDFMergeDialog()
     qtbot.addWidget(dlg)
 
     dlg.jpegSlider.setValue(55)
@@ -42,7 +42,7 @@ def test_jpeg_slider_updates_label(qtbot):
 
 
 def test_get_values_returns_correct_data(qtbot):
-    dlg = MergePDFDialog()
+    dlg = PDFMergeDialog()
     qtbot.addWidget(dlg)
 
     dlg.compSlider.setValue(3)   # Highest
@@ -54,7 +54,7 @@ def test_get_values_returns_correct_data(qtbot):
 
 
 def test_ok_button_accepts_dialog(qtbot):
-    dlg = MergePDFDialog()
+    dlg = PDFMergeDialog()
     qtbot.addWidget(dlg)
 
     qtbot.mouseClick(dlg.okBtn, Qt.LeftButton)
@@ -62,7 +62,7 @@ def test_ok_button_accepts_dialog(qtbot):
 
 
 def test_cancel_button_rejects_dialog(qtbot):
-    dlg = MergePDFDialog()
+    dlg = PDFMergeDialog()
     qtbot.addWidget(dlg)
 
     qtbot.mouseClick(dlg.cancelBtn, Qt.LeftButton)

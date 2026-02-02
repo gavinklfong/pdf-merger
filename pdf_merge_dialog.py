@@ -6,7 +6,7 @@ from PySide6.QtCore import Qt
 
 COMPRESSION_LABELS = ["Low", "Medium", "High", "Highest"]
 
-class MergePDFDialog(QDialog):
+class PDFMergeDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Compression Settings")
