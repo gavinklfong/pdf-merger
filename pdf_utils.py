@@ -188,6 +188,9 @@ def merge_files(file_paths, output_file, jpeg_quality=80, progress_callback=None
 
             logging.warning(f"Skipping unsupported file: {path}")
 
+        progress_callback({
+            "message": "Writing output PDF"
+        })
         writer.write(output_file)
 
         progress_callback({

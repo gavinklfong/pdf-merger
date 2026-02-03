@@ -13,7 +13,7 @@
 
 This tool comes with command line and GUI interface. 
 
-**Command line**
+## Command line
 
 Run `merge_pdf.py` to execute command line
 
@@ -32,7 +32,35 @@ python merge_pdf.py -i /tmp/a.pdf /home/test/b.pdf -o /tmp/output.pdf
 ```
 
 
-**GUI**
+## GUI
 
 Run `main.py` to launch GUI interface
 
+
+The UI design is simple, a file item list for users to drag and drop input files. In addition to file merging, there is a convenient function to sort dates in file names. Press enter or click to view image in full size
+
+PDF merger main window layout
+
+![PDF merger main window layout](./screenshots/pdf-merger-main-window.png "Main Window")
+
+Here is the user journey:
+
+1. Drag and drop files into file item list
+
+![PDF merger file item list](./screenshots/pdf-merger-file-item-list.png "File item list")
+
+2. Click “Merge Files” button and a dialogue will prompt for compression settings
+
+![PDF merger — compression settings dialog](./screenshots/pdf-merger-compression-settings.png "Compression settings dialog")
+
+3. Then, prompt for output file destination
+
+![PDF merger — output file selection](./screenshots/pdf-merger-output-file.png "Select output file")
+
+4. Show progress in status bar while the merge process in progress
+
+![PDF merger — merge in progress](./screenshots/pdf-merger-progress.png "Merge in progress")
+
+5. Automatically launch a viewer for the output file
+
+![PDF merger — open output file in OS default viewer](./screenshots/pdf-merger-viewer.png "Open output file in OS default viewer")
