@@ -1,6 +1,6 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from PySide6.QtWidgets import QDialog
+from PySide6.QtWidgets import QDialog, QPushButton
 from PySide6.QtCore import Signal, QObject
 from main import MainWindow
 from pypdf import PdfWriter
@@ -14,14 +14,34 @@ def make_pdf(path):
     with open(path, "wb") as f:
         writer.write(f)
 
-
 def test_window_initializes(qtbot):
     win = MainWindow()
     qtbot.addWidget(win)
 
+    win.show()
+    qtbot.waitExposed(win)
+    qtbot.wait(10)
+
+    # --- Basic window properties ---
     assert win.windowTitle() == "PDF Merger"
-    assert win.list.count() == 0
     assert win.sortAscending is False
+
+    # --- List widget initial state ---
+    assert win.list.count() == 0
+    assert win.list.emptyLabel.isVisible()
+
+    # --- Status bar ---
+    assert win.statusBar().currentMessage() == "0 items"
+
+    # --- Progress bar initial state ---
+    assert win.progressBar.isVisible() is False
+    assert win.progressBar.minimum() == 0
+    assert win.progressBar.maximum() == 0  # busy mode
+    assert win.progressBar.value() == -1   # Qt busy-mode sentinel
+
+    # --- Menu bar ---
+    actions = [a.text() for a in win.menuBar().actions()]
+    assert "About" in actions
 
 
 def test_toggle_sort_calls_list_sort(qtbot, tmp_path):
@@ -246,4 +266,65 @@ def test_drag_drop_adds_file(qtbot, tmp_path):
     win.list.dropEvent(event)
 
     assert win.list.getAllFilePaths() == [str(f)]
+
+def test_sort_button_triggers_toggle(qtbot):
+    win = MainWindow()
+    qtbot.addWidget(win)
+    win.show()
+
+    with patch.object(win, "toggleSort") as mock_toggle:
+        sort_button = win.findChild(QPushButton, None)
+        # safer: find by text
+        sort_button = next(b for b in win.findChildren(QPushButton) if b.text() == "Sort Files by Date")
+
+        qtbot.mouseClick(sort_button, Qt.LeftButton)
+        mock_toggle.assert_called_once()
+
+
+def test_clear_button_removes_items(qtbot, tmp_path):
+    win = MainWindow()
+    qtbot.addWidget(win)
+    win.show()
+
+    # Add a file
+    f = tmp_path / "x.pdf"
+    make_pdf(f)
+    win.list.addFileItem(str(f))
+
+    clear_button = next(b for b in win.findChildren(QPushButton) if b.text() == "Clear All Items")
+
+    qtbot.mouseClick(clear_button, Qt.LeftButton)
+
+    assert win.list.count() == 0
+
+def test_merge_button_calls_merge(qtbot):
+    win = MainWindow()
+    qtbot.addWidget(win)
+    win.show()
+
+    with patch.object(win, "mergeFileItems") as mock_merge:
+        merge_button = next(b for b in win.findChildren(QPushButton) if b.text() == "Merge Files")
+        qtbot.mouseClick(merge_button, Qt.LeftButton)
+        mock_merge.assert_called_once()
+
+
+def test_quit_button_closes_window(qtbot):
+    win = MainWindow()
+    qtbot.addWidget(win)
+    win.show()
+    qtbot.waitExposed(win)
+
+    quit_button = next(
+        b for b in win.findChildren(QPushButton) if b.text() == "Quit"
+    )
+
+    assert win.isVisible() is True
+
+    qtbot.mouseClick(quit_button, Qt.LeftButton)
+
+    # Allow Qt to process the close event
+    qtbot.wait(50)
+
+    assert win.isVisible() is False
+
 
