@@ -123,3 +123,127 @@ def test_view_file_calls_correct_os_command(qtbot, tmp_path):
         with patch("subprocess.run") as mock_run:
             win.viewFile(fake_file)
             mock_run.assert_called_once()
+
+def test_about_dialog_shows_message(qtbot):
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    with patch("main.QMessageBox.information") as mock_info:
+        win.showAboutDialog()
+        mock_info.assert_called_once()
+
+def test_update_status_count(qtbot, tmp_path):
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    f = tmp_path / "x.pdf"
+    make_pdf(f)
+
+    win.list.addFileItem(str(f))
+    win.updateStatusCount()
+
+    assert "1 item" in win.statusBar().currentMessage()
+
+
+def test_merge_dialog_cancel(qtbot, tmp_path):
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    f = tmp_path / "a.pdf"
+    make_pdf(f)
+    win.list.addFileItem(str(f))
+
+    mock_dialog = MagicMock()
+    mock_dialog.exec.return_value = QDialog.Rejected
+
+    with patch("main.PDFMergeDialog", return_value=mock_dialog), \
+         patch("main.QFileDialog.getSaveFileName") as mock_save:
+
+        win.mergeFileItems()
+        mock_save.assert_not_called()
+
+
+def test_view_file_error(qtbot):
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    fake_file = "fake.pdf"
+
+    # Determine which function will be called
+    if sys.platform.startswith("darwin"):
+        target = "main.subprocess.run"
+    elif os.name == "nt":
+        target = "main.os.startfile"
+    else:
+        target = "main.subprocess.run"
+
+    with patch(target, side_effect=Exception("boom")), \
+         patch("main.QMessageBox.critical") as mock_crit:
+        win.viewFile(fake_file)
+        mock_crit.assert_called_once()
+
+
+
+def test_on_merge_progress_updates(qtbot):
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    win.show()
+    qtbot.waitExposed(win)
+
+    # Start in busy mode
+    win.progressBar.setMaximum(0)
+    win.progressBar.setVisible(True)
+
+    # Process events so Qt updates visibility
+    qtbot.wait(10)
+
+    win.onMergeProgress({"message": "Working...", "pages_done": 1})
+
+    assert win.statusBar().currentMessage() == "Working..."
+    assert win.progressBar.isVisible()
+
+
+
+def test_on_merge_finished(qtbot, tmp_path):
+    win = MainWindow()
+    qtbot.addWidget(win)
+
+    out = tmp_path / "merged.pdf"
+    out.write_bytes(b"1234567890")
+    win._current_output_file = str(out)
+
+    with patch.object(win, "viewFile") as mock_view:
+        win.onMergeFinished()
+
+        assert "Merge completed successfully" in win.statusBar().currentMessage()
+        assert not win.progressBar.isVisible()
+        mock_view.assert_called_once_with(str(out))
+
+
+from PySide6.QtCore import QMimeData, QUrl, QPointF, Qt
+from PySide6.QtGui import QDropEvent
+
+def test_drag_drop_adds_file(qtbot, tmp_path):
+    win = MainWindow()
+    qtbot.addWidget(win)
+    win.show()
+
+    f = tmp_path / "drop.pdf"
+    make_pdf(f)
+
+    mime = QMimeData()
+    mime.setUrls([QUrl.fromLocalFile(str(f))])
+
+    event = QDropEvent(
+        QPointF(10, 10),
+        Qt.CopyAction,
+        mime,
+        Qt.LeftButton,
+        Qt.NoModifier
+    )
+
+    win.list.dropEvent(event)
+
+    assert win.list.getAllFilePaths() == [str(f)]
+
